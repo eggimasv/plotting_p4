@@ -34,6 +34,7 @@ scenarios = ['EW', 'MV',]
 weather_scenario = 'NF1'
 fueltype = 'electricity'
 unit = 'GW'
+#file_format = 'pdf'
 
 # ------------------------
 # Create empty result folders and delte preivous results

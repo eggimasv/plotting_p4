@@ -5,13 +5,33 @@ import math
 import pandas as pd
 import numpy as np
 from collections import OrderedDict
-import matplotlib.pyplot as plt
+
+import matplotlib
+from matplotlib import pyplot as plt
 from matplotlib import rcParams
+
 from tabulate import tabulate
 
 # Set default font
 rcParams['font.family'] = 'sans-serif'
 rcParams['font.sans-serif'] = ['Arial']
+
+def autolabel(rects, ax, rounding_digits, value_show_crit=0.01):
+    """Place labels with percentages in middle of stacked plots
+    """
+    for rect in rects:
+        value = rect.get_width()
+        value_round = round(value, rounding_digits) * 100
+
+        if value_round > value_show_crit:
+            ax.text(rect.get_x() + rect.get_width() / 2.,
+                    rect.get_y() + rect.get_height() / 2.,
+                    s=value_round,
+                    ha = 'center',
+                    va = 'center',
+                    color="black",
+                    fontsize=8,
+                    fontweight="bold")
 
 def cm2inch(*tupl):
     """Convert input cm to inches (width, hight)
@@ -228,28 +248,37 @@ def fig_3_hourly_comparison(
             # ----------------------
             # Fueltype chart showing the split between fueltypes
             # ----------------------
-            '''for scenario in scenarios:
+            for scenario in scenarios:
                 table_out = []
                 for mode in [right, left]:
 
-                    fig, ax = plt.subplots(figsize=cm2inch(4.5, 3), ncols=1, sharey=True)
+                    fig, ax = plt.subplots()
 
                     data_fueltypes = fig_dict_fuelypes[year][mode][scenario]
 
                     # Conver to percentages
                     data_fueltypes_p = data_fueltypes / data_fueltypes.sum().sum()
                     data_fueltypes_p = data_fueltypes_p.round(2)
-
-                    headers = data_fueltypes_p.columns
-                    
                     table_out.append(data_fueltypes_p.values)
 
-                    data_fueltypes_p.plot(
+                    headers = data_fueltypes_p.columns
+
+                    ax = data_fueltypes_p.plot(
                         kind='barh',
-                        ax=ax,
-                        width=1.0,
                         stacked=True,
-                        colors=['red', 'blue','grey','green'])
+                        width=0.8,
+                        colors=[
+                            '#03674f',
+                            '#669be6',
+                            '#e9c0fd',
+                            '#00242b']) #https://www.color-hex.com/color-palette/77223
+
+                    # Position labels
+                    autolabel(ax.patches, ax, rounding_digits=3)
+
+                    # Set height
+                    #for container in ax.containers:
+                    #    plt.setp(container, height=1)
 
                     # ------------
                     handles, labels = plt.gca().get_legend_handles_labels()
@@ -264,18 +293,25 @@ def fig_3_hourly_comparison(
                         bbox_to_anchor=(0.5, -0.1),
                         frameon=False)
 
-                    ##plt.xticks(
-                    #    ticks=list(data_fueltypes_p.values),
-                    #    labels=list(data_fueltypes_p.columns),
-                    #    fontsize=fontsize_small)
+                    # Empty y ticks
+                    plt.yticks(
+                        ticks=[0],
+                        labels=[''],
+                        fontsize=fontsize_small)
 
                     # Remove ticks
-                    plt.tick_params(axis='x', which='both', left=False) #remove ticks
-                    plt.tick_params(axis='y', which='both', left=False) #remove ticks
+                    plt.tick_params(axis='x', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
+                    plt.tick_params(axis='y', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
+
+                    #Axis label
+                    ax.set_xlabel('')
+                    ax.set_ylabel('')
+
 
                     # Save pdf of figure and legend
                     # ------------
                     fig_name = "{}_{}_{}__fueltypes_p.pdf".format(scenario, year, fueltype)
+                    
                     path_out_file = os.path.join(path_out_folder, fig_name)
 
                     if seperate_legend:
@@ -288,7 +324,11 @@ def fig_3_hourly_comparison(
                     # ------------
                     plt.autoscale(enable=True, axis='x', tight=True)
                     plt.autoscale(enable=True, axis='y', tight=True)
-                    #plt.tight()
+                    plt.tight_layout()
+
+                    # Reset figure size
+                    fig = matplotlib.pyplot.gcf()
+                    fig.set_size_inches(cm2inch(3.0, 1.0))
 
                     # Remove frame
                     # ------------
@@ -297,7 +337,7 @@ def fig_3_hourly_comparison(
                     ax.spines['bottom'].set_visible(False)
                     ax.spines['left'].set_visible(False)
 
-                    plt.show()
+                    #plt.show()
                     plt.savefig(path_out_file)
 
                     # Write out results to txt
@@ -305,7 +345,7 @@ def fig_3_hourly_comparison(
                         table_out, headers=headers,
                         numalign="right")
                     write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
-            '''
+
             # ----------------------
             # PLot pie-charts
             # ----------------------
@@ -491,7 +531,7 @@ def fig_3_hourly_comparison(
 
                 table_out.append([])
 
-                fig, ax = plt.subplots(figsize=cm2inch(9, 5), ncols=1, sharey=True)
+                fig, ax = plt.subplots(figsize=cm2inch(9, 5))
 
                 df_right.plot(kind='barh', ax=ax, width=1.0, stacked=True, color=colors)
                 df_left.plot(kind='barh', ax=ax, width=1.0, legend=False, stacked=True,  color=colors)
