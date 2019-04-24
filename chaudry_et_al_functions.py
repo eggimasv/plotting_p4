@@ -228,7 +228,7 @@ def fig_3_hourly_comparison(
             # ----------------------
             # Fueltype chart showing the split between fueltypes
             # ----------------------
-            for scenario in scenarios:
+            '''for scenario in scenarios:
                 table_out = []
                 for mode in [right, left]:
 
@@ -305,7 +305,7 @@ def fig_3_hourly_comparison(
                         table_out, headers=headers,
                         numalign="right")
                     write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
-
+            '''
             # ----------------------
             # PLot pie-charts
             # ----------------------
