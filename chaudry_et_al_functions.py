@@ -119,25 +119,30 @@ def load_data(in_path, scenarios, simulation_name, unit):
                     data_file = pd.read_csv(path_file)
 
                     try:
-                        # Aggregate across every energy hub region and group by "seasonal week"
-                        df_to_plot_national = data_file.groupby(data_file['seasonal_week']).sum()
+                        # test if seasonal_week_attribute
+                        _ = data_file.groupby(data_file['seasonal_week']).sum()
+
+                        data = data_file.set_index('seasonal_week')
+
+                        # Calculate national demand for every timestep
+                        #national_demand_summed_timesteps = data_file.groupby(data_file['seasonal_week']).sum()
+
+                        # Calculate regional demand across all timestep
+                        #regional_demand_summed_timesteps = data_file.groupby(data_file['seasonal_week'])
 
                         if unit == 'GW':
-                            df_to_plot_national = df_to_plot_national / 1000.0
+                            ##ORIGnational_demand_summed_timesteps = national_demand_summed_timesteps / 1000.0
+                            data = data / 1000.0
                         if unit == 'MW':
                             pass
-
-                        # Set seasonal week attribute as index
-                        #df_to_plot_national.set_index('seasonal_week')
+                        #if file_name == 'output_tran_wind_power_timestep_2050.csv':
+                        #    print(data)
+                        #    raise Exception
                     except:
-                        print("{}  has wrong format".format(file_name))
-                    '''# Set energy_hub as index
-                    try:
-                        data_file.set_index('energy_hub')
-                    except:
-                        print("... file does not have 'energy_hub' as column")'''
+                        print("{} Data containes no seasonal_week attribute".format(file_name))
 
-                    data_container[scenario][mode][weather_scenario]['energy_supply_constrained'][file_name] = df_to_plot_national
+                    data_container[scenario][mode][weather_scenario]['energy_supply_constrained'][file_name] = data
+                    #data_container[scenario][mode][weather_scenario]['energy_supply_constrained'][file_name] = national_demand_summed_timesteps
 
     return data_container
 
@@ -150,20 +155,26 @@ def fig_3_hourly_comparison(
         weather_scearnio,
         types_to_plot,
         unit,
+        temporal_conversion_factor,
         years=[2015, 2030, 2050],
         seperate_legend=True
     ):
     """Create x-y chart of a time-span (x-axis: demand, y-axis: time)
     """
-
     for fueltype in types_to_plot:
         print(".... fueltype: {}".format(fueltype))
 
         annote_crit = False #Add labels
 
         # Select hours to plots
+        height_cm_xy_figure = 5 # Figure height of xy figure
+
         seasonal_week_day = 2
         hours_selected = range(24 * (seasonal_week_day) + 1, 24 * (seasonal_week_day + 1) + 1)
+
+        # Select a full week
+        #height_cm_xy_figure = 10 # Figure height of xy figure
+        #hours_selected = range(24 * (0) + 1, 24 * (6 + 1) + 1)
 
         modes = ['DECENTRAL', 'CENTRAL']
         left = 'CENTRAL'
@@ -183,8 +194,7 @@ def fig_3_hourly_comparison(
             'electricity': '#03674f',
             'gas': '#669be6',
             'heat': '#e9c0fd',
-            'hydrogen': '#00242b'
-            }
+            'hydrogen': '#00242b'}
 
         fig_dict = {}
         fig_dict_piecharts = {}
@@ -209,26 +219,41 @@ def fig_3_hourly_comparison(
 
                     colors = []
                     data_files = data_container[scenario][mode][weather_scearnio]['energy_supply_constrained']
+
                     files_to_plot = filenames[fueltype].keys()
 
                     # Get all correct data to plot
                     df_to_plot = pd.DataFrame()
 
                     for file_name, file_data in data_files.items():
+
+                        # Aggregate national data for every timesteps
+                        national_per_timesteps = file_data.groupby(file_data.index).sum()
+
+                        # Aggregate regional annual data
+                        try:
+                            regional_annual = file_data.groupby(file_data['energy_hub']).sum().sum()
+                        except:
+                            pass
+
                         file_name_split_no_timpestep = file_name[:-9] #remove ending
                         name_column = file_name_split_no_timpestep[7:-9] #remove output_ and ending
                         file_name_split = file_name.split("_")
                         year_simulation = int(file_name_split[-1][:4])
 
                         if year == year_simulation:
-                            data_column = file_data[name_column]
                             if file_name_split_no_timpestep in files_to_plot:
-                                df_to_plot[str(name_column)] = data_column
+    
+                                # Add national_per_timesteps
+                                df_to_plot[str(name_column)] = national_per_timesteps[name_column]
+
                                 color = filenames[fueltype][file_name_split_no_timpestep]
                                 colors.append(color)
                             
                             # Get fueltype specific files
-                            sum_file = data_column.sum()
+                            sum_file = national_per_timesteps[name_column].sum()
+                            #ORIG sum_file = data_column.sum()
+                            print("SUMFILE " + str(sum_file))
 
                             if (file_name_split_no_timpestep in filenames['elec_hubs'].keys()) or (
                                 file_name_split_no_timpestep in filenames['elec_transmission'].keys()):
@@ -241,15 +266,13 @@ def fig_3_hourly_comparison(
                             elif file_name_split_no_timpestep in filenames['hydrogen_hubs'].keys():
                                 fig_dict_fuelypes[year][mode][scenario]['hydrogen'] += sum_file
 
-
-                    # Aggregate across every energy hub region and group by "seasonal week"
-                    #df_to_plot_national = df_to_plot.groupby(df_to_plot['seasonal_week']).sum()
-
-                    # Select hours to plots
-                    fig_dict[year][mode][scenario] = df_to_plot.loc[hours_selected]
+                    # Aggregate total demand across every energy hub region
+                    #regional_annual_demand = df_to_plot.groupby(df_to_plot['seasonal_week']).sum()
 
                     # Aggregate annual demand for pie-charts
                     fig_dict_piecharts[year][mode][scenario] = df_to_plot.sum()
+
+                    fig_dict[year][mode][scenario] = df_to_plot.loc[hours_selected]
 
             # ----------------------
             # Fueltype chart showing the split between fueltypes
@@ -357,16 +380,19 @@ def fig_3_hourly_comparison(
             # ----------------------
             # PLot pie-charts
             # ----------------------
+            radius_terawatt = 80 # 100% (radius 1) corresponds to 15 Terawatt (used to configure size of pie-charts)
+
             for scenario in scenarios:
                 table_out = []
                 for mode in [right, left]:
 
                     data_pie_chart = fig_dict_piecharts[year][mode][scenario]
 
-                    #  Calculate radius 15 mio corresponds to radius 1 (100%)
-                    radius_terawatt = 34 # 100% (radius 1) corresponds to 15 Terawatt
-                    initial_radius = 1
+                    # Temporal conversion
+                    data_pie_chart = data_pie_chart * temporal_conversion_factor
 
+                    #  Calculate new radius depending on demand (area proportional to size) (100%)
+                    initial_radius = 1
                     total_sum = data_pie_chart.sum() / 1000
                     area_change_p = total_sum / radius_terawatt
 
@@ -510,13 +536,14 @@ def fig_3_hourly_comparison(
             # Plot x-y graph
             # ----------
             for scenario in scenarios:
+                print("xy-graph: {}   {}".format(year, scenario))
                 table_out = []
 
                 # Data and plot
                 # ------------
                 df_right = fig_dict[year][right][scenario]
                 df_left = fig_dict[year][left][scenario]
-
+                
                 headers = list(df_right.columns)
                 headers.insert(0, "hour")
                 headers.insert(0, "type")
@@ -536,10 +563,9 @@ def fig_3_hourly_comparison(
                 df_left = df_left * -1 # Convert to minus values
                 #df_to_plot.plot.area()
                 #df_to_plot.plot.bar(stacked=True)#, orientation='vertical')
-
                 table_out.append([])
 
-                fig, ax = plt.subplots(figsize=cm2inch(9, 5))
+                fig, ax = plt.subplots(figsize=cm2inch(9, height_cm_xy_figure))
 
                 df_right.plot(kind='barh', ax=ax, width=1.0, stacked=True, color=colors)
                 df_left.plot(kind='barh', ax=ax, width=1.0, legend=False, stacked=True,  color=colors)
@@ -629,7 +655,6 @@ def fig_3_hourly_comparison(
                 plt.xlabel("{}".format(unit), fontdict=font_additional_info)
                 #plt.ylabel("Time: {}".format(seasonal_week_day),  fontdict=font_additional_info)
                 plt.ylabel("Hour of peak day")
-                #plt.show()
                 plt.savefig(path_out_file)
                 
                 # Write out results to txt
@@ -641,13 +666,21 @@ def fig_3_hourly_comparison(
 
 
 def fig_4(data_container):
-    """
-    """
 
     return
 
 
-def fig_5(data_container):
+def fig_5(
+        path_out,
+        data_container,
+        filenames,
+        scenarios,
+        weather_scearnio,
+        types_to_plot,
+        unit,
+        years=[2015, 2030, 2050],
+        seperate_legend=True
+    ):
     """
     """
 

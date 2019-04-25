@@ -36,6 +36,10 @@ fueltype = 'electricity'
 unit = 'GW'
 #file_format = 'pdf'
 
+
+# Temporal conversion of results, From seasonal to annual results
+factor_from_4_weeks_to_full_year = 1.0 / ((1.0 / (365/24)) * 4)
+
 # ------------------------
 # Create empty result folders and delte preivous results
 # ------------------------
@@ -150,10 +154,21 @@ chaudry_et_al_functions.fig_3_hourly_comparison(
     scenarios=scenarios,
     weather_scearnio=weather_scenario,
     unit=unit,
+    temporal_conversion_factor=factor_from_4_weeks_to_full_year,
     types_to_plot=['elec_hubs', 'heat_hubs'])
 
-
-#chaudry_et_al_functions.fig_4(data_container, fueltype=fueltype)
+#try:
+'''chaudry_et_al_functions.fig_4(
+    path_out,
+    data_container,
+    filenames=filenames,
+    scenarios=scenarios,
+    weather_scearnio=weather_scenario,
+    unit=unit,
+    types_to_plot=['elec_hubs', 'heat_hubs']
+)'''
+#except:
+#    raise Exception("failed ot print fig4")
 #chaudry_et_al_functions.fig_5(data_container, fueltype=fueltype)
 #chaudry_et_al_functions.fig_6(data_container, fueltype=fueltype)
 print("Finished creasting figures")
