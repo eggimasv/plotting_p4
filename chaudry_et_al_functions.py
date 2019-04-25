@@ -2,14 +2,12 @@
 """
 import os
 import math
+from collections import OrderedDict
 import pandas as pd
 import numpy as np
-from collections import OrderedDict
-
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
-
 from tabulate import tabulate
 
 # Set default font
@@ -24,12 +22,12 @@ def autolabel(rects, ax, rounding_digits, value_show_crit=0.01):
         value_round = round(value, rounding_digits) * 100
 
         if value_round > value_show_crit:
-            ax.text(rect.get_x() + rect.get_width() / 2.,
-                    rect.get_y() + rect.get_height() / 2.,
+            ax.text(rect.get_x() + rect.get_width() / 2,#width
+                    rect.get_y() + rect.get_height() / 2.4, #height
                     s=value_round,
-                    ha = 'center',
-                    va = 'center',
-                    color="black",
+                    ha='center',
+                    va='center',
+                    color="White",
                     fontsize=8,
                     fontweight="bold")
 
@@ -180,6 +178,14 @@ def fig_3_hourly_comparison(
             'weight': 'bold',
             'size': fontsize_large}
 
+        #https://www.color-hex.com/color-palette/77223
+        fueltypes_coloring = {
+            'electricity': '#03674f',
+            'gas': '#669be6',
+            'heat': '#e9c0fd',
+            'hydrogen': '#00242b'
+            }
+
         fig_dict = {}
         fig_dict_piecharts = {}
         fig_dict_fuelypes = {}
@@ -199,8 +205,8 @@ def fig_3_hourly_comparison(
                 for scenario in scenarios:
                     fig_dict[year][mode][scenario] = {}
                     fig_dict_fuelypes[year][mode][scenario] = pd.DataFrame(
-                        [[0,0,0,0]], columns=['electricity', 'gas', 'heat', 'hydrogen'])
-        
+                        [[0,0,0,0]], columns=fueltypes_coloring.keys())
+
                     colors = []
                     data_files = data_container[scenario][mode][weather_scearnio]['energy_supply_constrained']
                     files_to_plot = filenames[fueltype].keys()
@@ -259,26 +265,29 @@ def fig_3_hourly_comparison(
                     # Conver to percentages
                     data_fueltypes_p = data_fueltypes / data_fueltypes.sum().sum()
                     data_fueltypes_p = data_fueltypes_p.round(2)
-                    table_out.append(data_fueltypes_p.values)
 
-                    headers = data_fueltypes_p.columns
+                    absolute_values = list(data_fueltypes.values[0].tolist())
+                    relative_values = data_fueltypes_p.values[0].tolist()
+
+                    absolute_values.insert(0, 'absolute')
+                    relative_values.insert(0, 'relative')
+                    absolute_values.insert(0, mode)
+                    relative_values.insert(0, mode)
+                    table_out.append(absolute_values)
+                    table_out.append(relative_values)
+
+                    headers = list(data_fueltypes_p.columns)
+                    headers.insert(0, 'type')
+                    headers.insert(0, 'mode')
 
                     ax = data_fueltypes_p.plot(
                         kind='barh',
                         stacked=True,
-                        width=0.8,
-                        colors=[
-                            '#03674f',
-                            '#669be6',
-                            '#e9c0fd',
-                            '#00242b']) #https://www.color-hex.com/color-palette/77223
+                        width=0.7,
+                        colors=fueltypes_coloring.values())
 
                     # Position labels
                     autolabel(ax.patches, ax, rounding_digits=3)
-
-                    # Set height
-                    #for container in ax.containers:
-                    #    plt.setp(container, height=1)
 
                     # ------------
                     handles, labels = plt.gca().get_legend_handles_labels()
@@ -307,11 +316,9 @@ def fig_3_hourly_comparison(
                     ax.set_xlabel('')
                     ax.set_ylabel('')
 
-
                     # Save pdf of figure and legend
                     # ------------
-                    fig_name = "{}_{}_{}__fueltypes_p.pdf".format(scenario, year, fueltype)
-                    
+                    fig_name = "{}_{}_{}_{}__fueltypes_p.pdf".format(scenario, year, fueltype, mode)
                     path_out_file = os.path.join(path_out_folder, fig_name)
 
                     if seperate_legend:
@@ -328,7 +335,7 @@ def fig_3_hourly_comparison(
 
                     # Reset figure size
                     fig = matplotlib.pyplot.gcf()
-                    fig.set_size_inches(cm2inch(3.0, 1.0))
+                    fig.set_size_inches(cm2inch(4.0, 0.3))
 
                     # Remove frame
                     # ------------
@@ -342,7 +349,8 @@ def fig_3_hourly_comparison(
 
                     # Write out results to txt
                     table_tabulate = tabulate(
-                        table_out, headers=headers,
+                        table_out,
+                        headers=headers,
                         numalign="right")
                     write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
 
@@ -467,7 +475,7 @@ def fig_3_hourly_comparison(
 
                     # Save pdf of figure and legend
                     # ------------
-                    fig_name = "{}_{}_{}__pie.pdf".format(scenario, year, fueltype)
+                    fig_name = "{}_{}_{}_{}__pie.pdf".format(scenario, year, fueltype, mode)
                     path_out_file = os.path.join(path_out_folder, fig_name)
 
                     if seperate_legend:
@@ -619,8 +627,8 @@ def fig_3_hourly_comparison(
                 # Labels
                 # ------------
                 plt.xlabel("{}".format(unit), fontdict=font_additional_info)
-                plt.ylabel("Time seasonal_week_day: {}".format(seasonal_week_day),  fontdict=font_additional_info)
-
+                #plt.ylabel("Time: {}".format(seasonal_week_day),  fontdict=font_additional_info)
+                plt.ylabel("Hour of peak day")
                 #plt.show()
                 plt.savefig(path_out_file)
                 
@@ -630,7 +638,6 @@ def fig_3_hourly_comparison(
                     headers=headers,
                     numalign="right")
                 write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
-
 
 
 def fig_4(data_container):
