@@ -82,10 +82,10 @@ def create_folder(path_folder, name_subfolder=None):
             os.makedirs(path_result_subolder)
 
 def load_data(in_path, scenarios, simulation_name, unit):
-    """Read results
+    """Read results and set timestep as index in dataframe
 
     Returns
-    data_container : [scenario][mode][weather_scenario
+    data_container : dataframes in [scenario][mode][weather_scenario]
     """
     data_container = {}
     modes = ['CENTRAL', 'DECENTRAL']
@@ -114,7 +114,8 @@ def load_data(in_path, scenarios, simulation_name, unit):
                 for file_name in all_files:
                     path_file = os.path.join(path_supply_mix, file_name)
                     print(".... loading file: {}".format(file_name))
-
+                    variable_name = file_name[7:-18]
+                
                     # Load data
                     data_file = pd.read_csv(path_file)
 
@@ -124,28 +125,17 @@ def load_data(in_path, scenarios, simulation_name, unit):
 
                         data = data_file.set_index('seasonal_week')
 
-                        # Calculate national demand for every timestep
-                        #national_demand_summed_timesteps = data_file.groupby(data_file['seasonal_week']).sum()
-
-                        # Calculate regional demand across all timestep
-                        #regional_demand_summed_timesteps = data_file.groupby(data_file['seasonal_week'])
-
                         if unit == 'GW':
-                            ##ORIGnational_demand_summed_timesteps = national_demand_summed_timesteps / 1000.0
-                            data = data / 1000.0
+                            data[variable_name] = data[variable_name] / 1000.0
                         if unit == 'MW':
                             pass
-                        #if file_name == 'output_tran_wind_power_timestep_2050.csv':
-                        #    print(data)
-                        #    raise Exception
+
                     except:
                         print("{} Data containes no seasonal_week attribute".format(file_name))
 
                     data_container[scenario][mode][weather_scenario]['energy_supply_constrained'][file_name] = data
-                    #data_container[scenario][mode][weather_scenario]['energy_supply_constrained'][file_name] = national_demand_summed_timesteps
 
     return data_container
-
 
 def fig_3_hourly_comparison(
         path_out,
@@ -199,6 +189,7 @@ def fig_3_hourly_comparison(
         fig_dict = {}
         fig_dict_piecharts = {}
         fig_dict_fuelypes = {}
+        fig_dict_regional_annual_demand = {}
 
         path_out_folder = os.path.join(path_out, 'fig3')
 
@@ -206,11 +197,13 @@ def fig_3_hourly_comparison(
             fig_dict[year] = {}
             fig_dict_piecharts[year] = {}
             fig_dict_fuelypes[year] = {}
+            fig_dict_regional_annual_demand[year] = {}
 
             for mode in modes:
                 fig_dict[year][mode] = {}
                 fig_dict_piecharts[year][mode] = {}
                 fig_dict_fuelypes[year][mode] = {}
+                fig_dict_regional_annual_demand[year][mode] = {}
 
                 for scenario in scenarios:
                     fig_dict[year][mode][scenario] = {}
@@ -224,6 +217,7 @@ def fig_3_hourly_comparison(
 
                     # Get all correct data to plot
                     df_to_plot = pd.DataFrame()
+                    df_to_plot_regional = pd.DataFrame()
 
                     for file_name, file_data in data_files.items():
 
@@ -232,7 +226,8 @@ def fig_3_hourly_comparison(
 
                         # Aggregate regional annual data
                         try:
-                            regional_annual = file_data.groupby(file_data['energy_hub']).sum().sum()
+                            regional_annual = file_data.set_index('energy_hub')
+                            regional_annual = regional_annual.groupby(regional_annual.index).sum()
                         except:
                             pass
 
@@ -246,14 +241,13 @@ def fig_3_hourly_comparison(
     
                                 # Add national_per_timesteps
                                 df_to_plot[str(name_column)] = national_per_timesteps[name_column]
+                                df_to_plot_regional[str(name_column)] = regional_annual[name_column]
 
                                 color = filenames[fueltype][file_name_split_no_timpestep]
                                 colors.append(color)
                             
                             # Get fueltype specific files
                             sum_file = national_per_timesteps[name_column].sum()
-                            #ORIG sum_file = data_column.sum()
-                            print("SUMFILE " + str(sum_file))
 
                             if (file_name_split_no_timpestep in filenames['elec_hubs'].keys()) or (
                                 file_name_split_no_timpestep in filenames['elec_transmission'].keys()):
@@ -266,13 +260,130 @@ def fig_3_hourly_comparison(
                             elif file_name_split_no_timpestep in filenames['hydrogen_hubs'].keys():
                                 fig_dict_fuelypes[year][mode][scenario]['hydrogen'] += sum_file
 
-                    # Aggregate total demand across every energy hub region
-                    #regional_annual_demand = df_to_plot.groupby(df_to_plot['seasonal_week']).sum()
-
                     # Aggregate annual demand for pie-charts
                     fig_dict_piecharts[year][mode][scenario] = df_to_plot.sum()
+                    fig_dict_regional_annual_demand[year][mode][scenario] = df_to_plot_regional.sum(axis=1)
 
                     fig_dict[year][mode][scenario] = df_to_plot.loc[hours_selected]
+            
+            # ------------------------------------
+            # PLotting regional scpecific bar charts
+            # ------------------------------------
+            for scenario in scenarios:
+                table_out = []
+
+                # Data and plot
+                # ------------
+                regions_right = fig_dict_regional_annual_demand[year][right][scenario]
+                regions_left = fig_dict_regional_annual_demand[year][left][scenario]
+
+                # Convert from GW to TW
+                regions_right = regions_right / 1000
+                regions_left = regions_left / 1000
+
+                for region in regions_right.index:
+                    tot_right = regions_right.loc[region]
+                    tot_left = regions_left.loc[region]
+
+                    df_bars = pd.DataFrame([[tot_right, tot_left]],columns=[right, left])
+                    headers = list(df_bars.columns)
+                    headers.insert(0, "hour")
+                    headers.insert(0, "type")
+
+                    for index_hour in df_bars.index:
+                        row = list(df_bars.loc[index_hour])
+                        row.insert(0, index_hour)
+                        row.insert(0, 'right')
+                        table_out.append(row)
+                    
+                    fig, ax = plt.subplots()
+
+                    ax = df_bars.plot(
+                        kind='bar',
+                        x=df_bars.values,
+                        y=df_bars.columns,
+                        width=0.4)
+  
+                    # Legend
+                    # ------------
+                    handles, labels = plt.gca().get_legend_handles_labels()
+
+                    by_label = OrderedDict(zip(labels, handles))
+                    legend = plt.legend(
+                        by_label.values(),
+                        by_label.keys(),
+                        ncol=2,
+                        prop={'size': 8},
+                        loc='upper center',
+                        bbox_to_anchor=(0.5, -0.1),
+                        frameon=False)
+
+                    # Remove frame
+                    # ------------
+                    ax.spines['top'].set_visible(False)
+                    ax.spines['right'].set_visible(False)
+                    ax.spines['bottom'].set_visible(True)
+                    ax.spines['left'].set_visible(False)
+
+
+
+                    # Add grid lines
+                    # ------------
+                    ax.grid(which='major', color='white', axis='y', linestyle='-')
+                    plt.tick_params(axis='y', which='both', left=False) #remove ticks
+                    
+                    # Ticks and labels
+                    interval = 0.5
+                    nr_of_intervals = 3
+                    max_tick = (nr_of_intervals * interval)
+                    ticks = [round(i * interval,2)  for i in range(nr_of_intervals)]
+                    labels = [str(round(i * interval, 2)) for i in range(nr_of_intervals)]
+    
+                    plt.yticks(
+                        ticks=ticks,
+                        labels=labels,
+                        fontsize=8)
+                    
+                    # Limits
+                    # ------------
+                    plt.ylim(0, max_tick)
+
+                    # Remove ticks
+                    plt.tick_params(axis='x', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
+
+                    #Axis label
+                    ax.set_xlabel('')
+                    ax.set_ylabel('')
+
+                    # Reset figure size
+                    fig = matplotlib.pyplot.gcf()
+                    fig.set_size_inches(cm2inch(0.5, 2))
+
+                    plt.autoscale(enable=True, axis='x', tight=True)
+                    plt.autoscale(enable=True, axis='y', tight=True)
+                    plt.tight_layout()
+                    plt.show()
+                    # Save pdf of figure and legend
+                    # ------------
+                    fig_name = "{}_{}_{}__{}__barplot.pdf".format(scenario, year, fueltype, region)
+                    path_out_file = os.path.join(path_out_folder, fig_name)
+                    seperate_legend = True
+                    if seperate_legend:
+                        export_legend(
+                            legend,
+                            os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
+                        legend.remove()
+
+                    plt.savefig(path_out_file, transparent=True)
+
+
+                # Write out results to txt
+                table_tabulate = tabulate(
+                    table_out,
+                    headers=headers,
+                    numalign="right")
+                write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
+
 
             # ----------------------
             # Fueltype chart showing the split between fueltypes
@@ -307,7 +418,7 @@ def fig_3_hourly_comparison(
                         kind='barh',
                         stacked=True,
                         width=0.7,
-                        colors=fueltypes_coloring.values())
+                        color=fueltypes_coloring.values())
 
                     # Position labels
                     autolabel(ax.patches, ax, rounding_digits=3)
@@ -367,7 +478,6 @@ def fig_3_hourly_comparison(
                     ax.spines['bottom'].set_visible(False)
                     ax.spines['left'].set_visible(False)
 
-                    #plt.show()
                     plt.savefig(path_out_file)
 
                     # Write out results to txt

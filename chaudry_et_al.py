@@ -153,9 +153,9 @@ chaudry_et_al_functions.fig_3_hourly_comparison(
     filenames=filenames,
     scenarios=scenarios,
     weather_scearnio=weather_scenario,
+    types_to_plot=['elec_hubs', 'heat_hubs'],
     unit=unit,
-    temporal_conversion_factor=factor_from_4_weeks_to_full_year,
-    types_to_plot=['elec_hubs', 'heat_hubs'])
+    temporal_conversion_factor=factor_from_4_weeks_to_full_year)
 
 #try:
 '''chaudry_et_al_functions.fig_4(
