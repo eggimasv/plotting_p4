@@ -278,15 +278,53 @@ def fig_3_hourly_comparison(
                 regions_right = fig_dict_regional_annual_demand[year][right][scenario]
                 regions_left = fig_dict_regional_annual_demand[year][left][scenario]
 
+                # Sorting
+                sored_df = regions_right.sort_values()
+                sorted_index = sored_df.index.tolist()
+
+                # Reorder index
+                regions_right = regions_right.reindex(sorted_index)
+                regions_left = regions_left.reindex(sorted_index)
+
                 # Convert from GW to TW
                 regions_right = regions_right / 1000
                 regions_left = regions_left / 1000
 
                 # All regions together
+                fig, ax = plt.subplots()
 
+                df_bars = pd.DataFrame(
+                    {right: regions_right.values.tolist(),
+                    left: regions_left.values.tolist()},
+                    index=regions_right.index)
                 
+                colors = {
+                    right: '#ddca7c',
+                    left: '#4a8487'}
 
+                ax = df_bars.plot(
+                    kind='bar',
+                    width=0.8,
+                    color=list(colors.values()))
+
+                # Remove frame
+                # ------------
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.spines['bottom'].set_visible(True)
+                ax.spines['left'].set_visible(False)
+
+                #Axis label
+                ax.set_xlabel('Energy Hub Region')
+                ax.set_ylabel('GW')
+
+                fig_name = "{}_{}_{}__barplots_comparison_all.pdf".format(scenario, year, fueltype)
+                path_out_file = os.path.join(path_out_folder, fig_name)
+                plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
+
+                # ------------------------
                 # Every region on its own
+                # ------------------------
                 for region in regions_right.index:
                     tot_right = regions_right.loc[region]
                     tot_left = regions_left.loc[region]
@@ -308,6 +346,7 @@ def fig_3_hourly_comparison(
                         kind='bar',
                         x=df_bars.values,
                         y=df_bars.columns,
+                        color=list(colors.values()),
                         width=0.4)
   
                     # Legend
