@@ -13,6 +13,7 @@ from tabulate import tabulate
 # Set default font
 rcParams['font.family'] = 'sans-serif'
 rcParams['font.sans-serif'] = ['Arial']
+#rcParams.update({'figure.autolayout': True})
 
 def autolabel(rects, ax, rounding_digits, value_show_crit=0.01):
     """Place labels with percentages in middle of stacked plots
@@ -281,11 +282,16 @@ def fig_3_hourly_comparison(
                 regions_right = regions_right / 1000
                 regions_left = regions_left / 1000
 
+                # All regions together
+
+                
+
+                # Every region on its own
                 for region in regions_right.index:
                     tot_right = regions_right.loc[region]
                     tot_left = regions_left.loc[region]
 
-                    df_bars = pd.DataFrame([[tot_right, tot_left]],columns=[right, left])
+                    df_bars = pd.DataFrame([[tot_right, tot_left]], columns=[right, left])
                     headers = list(df_bars.columns)
                     headers.insert(0, "hour")
                     headers.insert(0, "type")
@@ -325,16 +331,16 @@ def fig_3_hourly_comparison(
                     ax.spines['bottom'].set_visible(True)
                     ax.spines['left'].set_visible(False)
 
-
-
                     # Add grid lines
                     # ------------
                     ax.grid(which='major', color='white', axis='y', linestyle='-')
                     plt.tick_params(axis='y', which='both', left=False) #remove ticks
                     
+                    # ------------------
                     # Ticks and labels
-                    interval = 0.5
-                    nr_of_intervals = 3
+                    # ------------------
+                    interval = 1
+                    nr_of_intervals = 2
                     max_tick = (nr_of_intervals * interval)
                     ticks = [round(i * interval,2)  for i in range(nr_of_intervals)]
                     labels = [str(round(i * interval, 2)) for i in range(nr_of_intervals)]
@@ -343,26 +349,31 @@ def fig_3_hourly_comparison(
                         ticks=ticks,
                         labels=labels,
                         fontsize=8)
-                    
+
+                    # ------------
                     # Limits
                     # ------------
                     plt.ylim(0, max_tick)
 
-                    # Remove ticks
+                    # Remove ticks and labels
                     plt.tick_params(axis='x', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
+                    plt.tick_params(axis='y', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
+                    ax.set_yticklabels([])
+                    ax.set_xticklabels([])
 
                     #Axis label
                     ax.set_xlabel('')
                     ax.set_ylabel('')
 
                     # Reset figure size
+                    widht=0.5
+                    height=2
                     fig = matplotlib.pyplot.gcf()
-                    fig.set_size_inches(cm2inch(0.5, 2))
+                    fig.set_size_inches(cm2inch(widht, height))
 
-                    plt.autoscale(enable=True, axis='x', tight=True)
-                    plt.autoscale(enable=True, axis='y', tight=True)
-                    plt.tight_layout()
-                    plt.show()
+                    #plt.autoscale(enable=True, axis='x', tight=True)
+                    #plt.autoscale(enable=True, axis='y', tight=True)
+
                     # Save pdf of figure and legend
                     # ------------
                     fig_name = "{}_{}_{}__{}__barplot.pdf".format(scenario, year, fueltype, region)
@@ -374,8 +385,46 @@ def fig_3_hourly_comparison(
                             os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
                         legend.remove()
 
-                    plt.savefig(path_out_file, transparent=True)
+                    plt.tight_layout()
+                    #plt.show()
 
+                    plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
+
+                # ----------------------------
+                # Create legend file with size
+                # ----------------------------
+                fig, ax = plt.subplots()
+
+                dummy_df = pd.DataFrame([[interval]], columns=['test'])
+
+                ax = dummy_df.plot(
+                    kind='bar',
+                    x=dummy_df.values,
+                    y=dummy_df.columns,
+                    width=0.4)
+    
+                plt.yticks(
+                    ticks=ticks,
+                    labels=labels,
+                    fontsize=8)
+
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.spines['bottom'].set_visible(True)
+                ax.spines['left'].set_visible(False)
+
+                plt.xlabel("TW interval {}".format(interval))
+
+                # Rest size
+                fig = matplotlib.pyplot.gcf()
+                fig.set_size_inches(cm2inch(widht, height))
+
+                ax.legend().set_visible(False)
+    
+                fig_name = "{}_{}_{}__barplot_dimension_legend.pdf".format(scenario, year, fueltype)
+                path_out_file = os.path.join(path_out_folder, fig_name)
+ 
+                plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
 
                 # Write out results to txt
                 table_tabulate = tabulate(
