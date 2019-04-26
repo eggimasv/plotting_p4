@@ -138,7 +138,7 @@ def load_data(in_path, scenarios, simulation_name, unit):
 
     return data_container
 
-def fig_3_hourly_comparison(
+def plot_figures(
         path_out,
         data_container,
         filenames,
@@ -192,7 +192,8 @@ def fig_3_hourly_comparison(
         fig_dict_fuelypes = {}
         fig_dict_regional_annual_demand = {}
 
-        path_out_folder = os.path.join(path_out, 'fig3')
+        path_out_folder_fig3 = os.path.join(path_out, 'fig3')
+        path_out_folder_fig4 = os.path.join(path_out, 'fig4')
 
         for year in years:
             fig_dict[year] = {}
@@ -266,12 +267,14 @@ def fig_3_hourly_comparison(
                     fig_dict_regional_annual_demand[year][mode][scenario] = df_to_plot_regional.sum(axis=1)
 
                     fig_dict[year][mode][scenario] = df_to_plot.loc[hours_selected]
-            
+
+
+
             # ------------------------------------
             # PLotting regional scpecific bar charts
             # ------------------------------------
             for scenario in scenarios:
-                table_out = []
+                table_all_regs = []
 
                 # Data and plot
                 # ------------
@@ -289,8 +292,10 @@ def fig_3_hourly_comparison(
                 # Convert from GW to TW
                 regions_right = regions_right / 1000
                 regions_left = regions_left / 1000
-
-                # All regions together
+                
+                # -------------------------
+                # Plotting all regions together
+                # -------------------------
                 fig, ax = plt.subplots()
 
                 df_bars = pd.DataFrame(
@@ -298,14 +303,22 @@ def fig_3_hourly_comparison(
                     left: regions_left.values.tolist()},
                     index=regions_right.index)
                 
-                colors = {
+                # Writing out txt
+                headers_all_regs = df_bars.columns.values.tolist()
+                headers_all_regs.insert(0, 'energy_hubs')
+                for index in df_bars.index:
+                    reg_val = df_bars.loc[index].values.tolist()
+                    reg_val.insert(0, index)
+                    table_all_regs.append(reg_val)
+    
+                colors_right_left = {
                     right: '#ddca7c',
                     left: '#4a8487'}
 
                 ax = df_bars.plot(
                     kind='bar',
                     width=0.8,
-                    color=list(colors.values()))
+                    color=list(colors_right_left.values()))
 
                 # Remove frame
                 # ------------
@@ -319,12 +332,20 @@ def fig_3_hourly_comparison(
                 ax.set_ylabel('GW')
 
                 fig_name = "{}_{}_{}__barplots_comparison_all.pdf".format(scenario, year, fueltype)
-                path_out_file = os.path.join(path_out_folder, fig_name)
+                path_out_file = os.path.join(path_out_folder_fig4, fig_name)
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
+
+                # Write out results to txt
+                table_all_regs_tabulate = tabulate(
+                    table_all_regs,
+                    headers=headers_all_regs,
+                    numalign="right")
+                write_to_txt(path_out_file[:-4] + ".txt", table_all_regs_tabulate)
 
                 # ------------------------
                 # Every region on its own
                 # ------------------------
+                table_out = []
                 for region in regions_right.index:
                     tot_right = regions_right.loc[region]
                     tot_left = regions_left.loc[region]
@@ -346,7 +367,7 @@ def fig_3_hourly_comparison(
                         kind='bar',
                         x=df_bars.values,
                         y=df_bars.columns,
-                        color=list(colors.values()),
+                        color=list(colors_right_left.values()),
                         width=0.4)
   
                     # Legend
@@ -416,7 +437,7 @@ def fig_3_hourly_comparison(
                     # Save pdf of figure and legend
                     # ------------
                     fig_name = "{}_{}_{}__{}__barplot.pdf".format(scenario, year, fueltype, region)
-                    path_out_file = os.path.join(path_out_folder, fig_name)
+                    path_out_file = os.path.join(path_out_folder_fig4, fig_name)
                     seperate_legend = True
                     if seperate_legend:
                         export_legend(
@@ -430,8 +451,9 @@ def fig_3_hourly_comparison(
                     plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
 
                 # ----------------------------
-                # Create legend file with size
+                # Plot Legend element
                 # ----------------------------
+                table_out = []
                 fig, ax = plt.subplots()
 
                 dummy_df = pd.DataFrame([[interval]], columns=['test'])
@@ -461,7 +483,7 @@ def fig_3_hourly_comparison(
                 ax.legend().set_visible(False)
     
                 fig_name = "{}_{}_{}__barplot_dimension_legend.pdf".format(scenario, year, fueltype)
-                path_out_file = os.path.join(path_out_folder, fig_name)
+                path_out_file = os.path.join(path_out_folder_fig3, fig_name)
  
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
 
@@ -471,7 +493,6 @@ def fig_3_hourly_comparison(
                     headers=headers,
                     numalign="right")
                 write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
-
 
             # ----------------------
             # Fueltype chart showing the split between fueltypes
@@ -541,7 +562,7 @@ def fig_3_hourly_comparison(
                     # Save pdf of figure and legend
                     # ------------
                     fig_name = "{}_{}_{}_{}__fueltypes_p.pdf".format(scenario, year, fueltype, mode)
-                    path_out_file = os.path.join(path_out_folder, fig_name)
+                    path_out_file = os.path.join(path_out_folder_fig3, fig_name)
 
                     if seperate_legend:
                         export_legend(
@@ -700,7 +721,7 @@ def fig_3_hourly_comparison(
                     # Save pdf of figure and legend
                     # ------------
                     fig_name = "{}_{}_{}_{}__pie.pdf".format(scenario, year, fueltype, mode)
-                    path_out_file = os.path.join(path_out_folder, fig_name)
+                    path_out_file = os.path.join(path_out_folder_fig3, fig_name)
 
                     if seperate_legend:
                         export_legend(
@@ -764,7 +785,6 @@ def fig_3_hourly_comparison(
                 table_out.append([])
 
                 fig, ax = plt.subplots(figsize=cm2inch(9, height_cm_xy_figure))
-
                 df_right.plot(kind='barh', ax=ax, width=1.0, stacked=True, color=colors)
                 df_left.plot(kind='barh', ax=ax, width=1.0, legend=False, stacked=True,  color=colors)
 
@@ -840,7 +860,7 @@ def fig_3_hourly_comparison(
                 # Save pdf of figure and legend
                 # ------------
                 fig_name = "{}_{}_{}__xy_plot.pdf".format(scenario, year, fueltype)
-                path_out_file = os.path.join(path_out_folder, fig_name)
+                path_out_file = os.path.join(path_out_folder_fig3, fig_name)
 
                 if seperate_legend:
                     export_legend(

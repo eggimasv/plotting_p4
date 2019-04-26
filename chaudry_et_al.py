@@ -46,12 +46,11 @@ factor_from_4_weeks_to_full_year = 1.0 / ((1.0 / (365/24)) * 4)
 shutil.rmtree(path_out) # delete results
 chaudry_et_al_functions.create_folder(path_out)
 
-paths_figs = ['fig3', 'fig4', 'fig5', 'fig6']
+figs = ['fig3', 'fig4', 'fig5', 'fig6']
 
-for fig_name in paths_figs:
+for fig_name in figs:
     path_fig = os.path.join(path_out, fig_name)
     chaudry_et_al_functions.create_folder(path_fig)
-
 
 filenames = {
     'emissions': {
@@ -147,7 +146,7 @@ print("... finished loading data")
 # Create figures
 # ------------------------
 # Dasboard figures
-chaudry_et_al_functions.fig_3_hourly_comparison(
+chaudry_et_al_functions.plot_figures(
     path_out,
     data_container,
     filenames=filenames,
@@ -157,16 +156,7 @@ chaudry_et_al_functions.fig_3_hourly_comparison(
     unit=unit,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year)
 
-#try:
-'''chaudry_et_al_functions.fig_4(
-    path_out,
-    data_container,
-    filenames=filenames,
-    scenarios=scenarios,
-    weather_scearnio=weather_scenario,
-    unit=unit,
-    types_to_plot=['elec_hubs', 'heat_hubs']
-)'''
+
 #except:
 #    raise Exception("failed ot print fig4")
 #chaudry_et_al_functions.fig_5(data_container, fueltype=fueltype)
