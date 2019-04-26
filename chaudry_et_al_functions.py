@@ -483,7 +483,7 @@ def plot_figures(
                 ax.legend().set_visible(False)
     
                 fig_name = "{}_{}_{}__barplot_dimension_legend.pdf".format(scenario, year, fueltype)
-                path_out_file = os.path.join(path_out_folder_fig3, fig_name)
+                path_out_file = os.path.join(path_out_folder_fig4, fig_name)
  
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
 
