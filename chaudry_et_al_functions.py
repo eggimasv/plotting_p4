@@ -183,9 +183,21 @@ def plot_figures(
         #https://www.color-hex.com/color-palette/77223
         fueltypes_coloring = {
             'electricity': '#03674f',
-            'gas': '#669be6',
+            'gas': '#6699CC',
             'heat': '#e9c0fd',
             'hydrogen': '#00242b'}
+
+        # https://www.ofgem.gov.uk/data-portal/electricity-generation-mix-quarter-and-fuel-source-gb
+        #Colors from ofgem
+        # gas: '#6699CC'
+        # nuclear:
+        # coal: FF9966
+        # oil: 339966
+        # hydro: 666699
+        # wind: CCCCCC
+        # Bioenergy: 333333
+        # interconnectors: 33CCCC
+        # pumped storage: FFCC33
 
         fig_dict = {}
         fig_dict_piecharts = {}
@@ -320,6 +332,8 @@ def plot_figures(
                     width=0.8,
                     color=list(colors_right_left.values()))
 
+                ax.grid(which='major', color='white', axis='y', linestyle='-')
+
                 # Remove frame
                 # ------------
                 ax.spines['top'].set_visible(False)
@@ -393,7 +407,7 @@ def plot_figures(
 
                     # Add grid lines
                     # ------------
-                    ax.grid(which='major', color='white', axis='y', linestyle='-')
+                    ax.grid(which='major', color='#CCCCCC', axis='y', linestyle='-', alpha=0.5)
                     plt.tick_params(axis='y', which='both', left=False) #remove ticks
                     
                     # ------------------
@@ -427,7 +441,7 @@ def plot_figures(
 
                     # Reset figure size
                     widht=0.5
-                    height=2
+                    height=3
                     fig = matplotlib.pyplot.gcf()
                     fig.set_size_inches(cm2inch(widht, height))
 
@@ -462,6 +476,7 @@ def plot_figures(
                     kind='bar',
                     x=dummy_df.values,
                     y=dummy_df.columns,
+                    color='black',
                     width=0.4)
     
                 plt.yticks(
@@ -474,17 +489,18 @@ def plot_figures(
                 ax.spines['bottom'].set_visible(True)
                 ax.spines['left'].set_visible(False)
 
-                plt.xlabel("TW interval {}".format(interval))
+                #plt.xlabel("TW interval {}".format(interval))
+                plt.tick_params(axis='x', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
 
                 # Rest size
                 fig = matplotlib.pyplot.gcf()
                 fig.set_size_inches(cm2inch(widht, height))
 
                 ax.legend().set_visible(False)
-    
+
                 fig_name = "{}_{}_{}__barplot_dimension_legend.pdf".format(scenario, year, fueltype)
                 path_out_file = os.path.join(path_out_folder_fig4, fig_name)
- 
+
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
 
                 # Write out results to txt
@@ -493,6 +509,7 @@ def plot_figures(
                     headers=headers,
                     numalign="right")
                 write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
+
 
             # ----------------------
             # Fueltype chart showing the split between fueltypes
