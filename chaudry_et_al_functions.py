@@ -334,19 +334,60 @@ def plot_figures(
 
                 ax.grid(which='major', color='white', axis='y', linestyle='-')
 
+
+                # ------------
+                # Limits
+                # ------------
+                #plt.ylim(0, 2 )
+
+                # Legend
+                # ------------
+                handles, labels = plt.gca().get_legend_handles_labels()
+
+                by_label = OrderedDict(zip(labels, handles))
+                legend = plt.legend(
+                    by_label.values(),
+                    by_label.keys(),
+                    ncol=2,
+                    prop={'size': 8},
+                    loc='upper center',
+                    bbox_to_anchor=(0.5, -0.1),
+                    frameon=False)
+
                 # Remove frame
                 # ------------
                 ax.spines['top'].set_visible(False)
                 ax.spines['right'].set_visible(False)
                 ax.spines['bottom'].set_visible(True)
                 ax.spines['left'].set_visible(False)
-
+    
+                # ------------------
+                # Ticks and labels
+                # ------------------
+                plt.tick_params(axis='y', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
+                '''interval = 0.5
+                nr_of_intervals = 6
+                max_tick = (nr_of_intervals * interval)
+                ticks = [round(i * interval, 2)  for i in range(nr_of_intervals)]
+                labels = [str(round(i * interval, 2)) for i in range(nr_of_intervals)]'''
+    
                 #Axis label
-                ax.set_xlabel('Energy Hub Region')
-                ax.set_ylabel('GW')
+                ax.set_xlabel('Energy hub region')
+                ax.set_ylabel('TW')
+
+                # Reset figure size
+                fig = matplotlib.pyplot.gcf()
+                fig.set_size_inches(cm2inch(12, 6))
 
                 fig_name = "{}_{}_{}__barplots_comparison_all.pdf".format(scenario, year, fueltype)
                 path_out_file = os.path.join(path_out_folder_fig4, fig_name)
+                seperate_legend = True
+                if seperate_legend:
+                    export_legend(
+                        legend,
+                        os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
+                    legend.remove()
+
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
 
                 # Write out results to txt
@@ -407,7 +448,7 @@ def plot_figures(
 
                     # Add grid lines
                     # ------------
-                    ax.grid(which='major', color='#CCCCCC', axis='y', linestyle='-', alpha=0.5)
+                    #ax.grid(which='major', color='white', axis='y', linestyle='-', alpha=0.5)
                     plt.tick_params(axis='y', which='both', left=False) #remove ticks
                     
                     # ------------------
