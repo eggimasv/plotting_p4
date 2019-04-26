@@ -146,7 +146,7 @@ data_container = chaudry_et_al_functions.load_data(
     unit=unit)
 
 print("... finished loading data")
-
+raise Exception("FF")
 # ------------------------
 # Create figures
 # ------------------------

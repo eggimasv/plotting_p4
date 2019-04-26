@@ -89,13 +89,16 @@ def load_data(in_path, scenarios, simulation_name, unit):
     data_container : dataframes in [scenario][mode][weather_scenario]
     """
     data_container = {}
+    data_container_fig6 = {}
     modes = ['CENTRAL', 'DECENTRAL']
 
     for scenario in scenarios:
         data_container[scenario] = {}
+        data_container_fig6[scenario] = {}
 
         for mode in modes:
             data_container[scenario][mode] = {}
+            data_container_fig6[scenario][mode]  = {}
 
             # Iterate over weather scenarios
             path_scenarios = os.path.join(in_path, scenario, mode)
@@ -103,34 +106,64 @@ def load_data(in_path, scenarios, simulation_name, unit):
 
             for weather_scenario in weather_scenarios:
                 data_container[scenario][mode][weather_scenario] = {}
+                data_container_fig6[scenario][mode][weather_scenario] = {}
 
                 # ---------------------------
-                # Load supply generation mix
+                # Load restuls for fig6
                 # ---------------------------
-                data_container[scenario][mode][weather_scenario] ['energy_supply_constrained'] = {}
+                '''if mode == 'DECENTRAL':
+                    steps = ['step1', 'step2', 'step3', 'step4']
+                    
+                    for step in steps:
+                        data_container_fig6[scenario][mode][weather_scenario][step] = {}
+                        data_container_fig6[scenario][mode][weather_scenario][step]['energy_supply_constrained'] = {}
+                        
+                        path_supply_mix = os.path.join(in_path, scenario, mode, weather_scenario, step, simulation_name, 'decision_0')
+
+                        all_files = os.listdir(path_supply_mix)
+
+                        for file_name in all_files:
+                            path_file = os.path.join(path_supply_mix, file_name)
+                            variable_name = file_name[7:-18]
+                            data_file = pd.read_csv(path_file)
+
+                            try: # test if seasonal_week_attribute
+                                _ = data_file.groupby(data_file['seasonal_week']).sum()
+
+                                data = data_file.set_index('seasonal_week')
+
+                                if unit == 'GW':
+                                    data[variable_name] = data[variable_name] / 1000.0
+                                if unit == 'MW':
+                                    pass
+                            except:
+                                print("{} Data containes no seasonal_week attribute".format(file_name))
+
+                            data_container_fig6[scenario][mode][weather_scenario][step]['energy_supply_constrained'][file_name] = data
+                '''
+                # ---------------------------
+                # Load energy_supply_constrained
+                # ---------------------------
+                data_container[scenario][mode][weather_scenario]['energy_supply_constrained'] = {}
                 path_supply_mix = os.path.join(in_path, scenario, mode, weather_scenario, simulation_name, 'energy_supply_constrained', 'decision_0')
 
                 all_files = os.listdir(path_supply_mix)
 
                 for file_name in all_files:
                     path_file = os.path.join(path_supply_mix, file_name)
-                    print(".... loading file: {}".format(file_name))
                     variable_name = file_name[7:-18]
-                
-                    # Load data
+
                     data_file = pd.read_csv(path_file)
 
                     try:
                         # test if seasonal_week_attribute
                         _ = data_file.groupby(data_file['seasonal_week']).sum()
-
                         data = data_file.set_index('seasonal_week')
 
                         if unit == 'GW':
                             data[variable_name] = data[variable_name] / 1000.0
                         if unit == 'MW':
                             pass
-
                     except:
                         print("{} Data containes no seasonal_week attribute".format(file_name))
 
