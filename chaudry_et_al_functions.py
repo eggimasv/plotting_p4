@@ -428,7 +428,6 @@ def plot_figures(
         path_out_folder_fig3 = os.path.join(path_out, 'fig3')
         path_out_folder_fig4 = os.path.join(path_out, 'fig4')
 
-
         for year in years:
             fig_dict[year] = {}
             fig_dict_piecharts[year] = {}
@@ -726,7 +725,7 @@ def plot_figures(
                     plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
 
                 # ----------------------------
-                # Plot Legend element
+                # Plot legend element
                 # ----------------------------
                 table_out = []
                 fig, ax = plt.subplots()

@@ -152,6 +152,8 @@ data_container, data_container_fig_steps = chaudry_et_al_functions.load_data(
     unit=unit,
     steps=steps)
 
+print("... finished loading data")
+
 # ------------------------
 # Create figures
 # ------------------------
@@ -175,7 +177,5 @@ chaudry_et_al_functions.plot_figures(
     types_to_plot=['elec_hubs', 'heat_hubs'],
     unit=unit,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year)
-
-
 
 print("Finished creasting figures")
