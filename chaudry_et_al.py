@@ -152,7 +152,7 @@ data_container, data_container_fig_steps = chaudry_et_al_functions.load_data(
     unit=unit,
     steps=steps)
 
-print("... finished loading data")
+print("... finished loading data", flush=True)
 
 # ------------------------
 # Create figures
@@ -178,4 +178,4 @@ chaudry_et_al_functions.plot_figures(
     unit=unit,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year)
 
-print("Finished creasting figures")
+print("... Finished creasting figures", flush=True)

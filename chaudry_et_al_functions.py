@@ -429,6 +429,8 @@ def plot_figures(
         path_out_folder_fig4 = os.path.join(path_out, 'fig4')
 
         for year in years:
+            print("... " + str(year))
+
             fig_dict[year] = {}
             fig_dict_piecharts[year] = {}
             fig_dict_fuelypes[year] = {}
@@ -608,6 +610,7 @@ def plot_figures(
                     legend.remove()
 
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
+                plt.close('all')
 
                 # Write out results to txt
                 table_all_regs_tabulate = tabulate(
@@ -636,11 +639,17 @@ def plot_figures(
                         table_out.append(row)
                     
                     fig, ax = plt.subplots()
+                    '''ax2 = df_bars.plot(
+                        kind='bar',
+                        x=[]],
+                        y=df_bars.columns.tolist(),
+                        color=list(colors_right_left.values()),
+                        width=0.4)'''
 
                     ax = df_bars.plot(
                         kind='bar',
-                        x=df_bars.values,
-                        y=df_bars.columns,
+                        #x=df_bars.values,
+                        y=df_bars.columns.tolist(),
                         color=list(colors_right_left.values()),
                         width=0.4)
   
@@ -723,6 +732,7 @@ def plot_figures(
                     #plt.show()
 
                     plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
+                    plt.close('all')
 
                 # ----------------------------
                 # Plot legend element
@@ -734,7 +744,7 @@ def plot_figures(
 
                 ax = dummy_df.plot(
                     kind='bar',
-                    x=dummy_df.values,
+                    #x=dummy_df.values,
                     y=dummy_df.columns,
                     color='black',
                     width=0.4)
@@ -762,6 +772,7 @@ def plot_figures(
                 path_out_file = os.path.join(path_out_folder_fig4, fig_name)
 
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
+                plt.close('all')
 
                 # Write out results to txt
                 table_tabulate = tabulate(
@@ -865,6 +876,7 @@ def plot_figures(
                     ax.spines['left'].set_visible(False)
 
                     plt.savefig(path_out_file)
+                    plt.close('all')
 
                     # Write out results to txt
                     table_tabulate = tabulate(
@@ -1021,6 +1033,7 @@ def plot_figures(
 
                     #plt.show()
                     plt.savefig(path_out_file)
+                    plt.close('all')
 
                     # Write out results to txt
                     table_tabulate = tabulate(
