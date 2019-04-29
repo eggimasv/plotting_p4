@@ -82,23 +82,24 @@ def create_folder(path_folder, name_subfolder=None):
         if not os.path.exists(path_result_subolder):
             os.makedirs(path_result_subolder)
 
-def load_data(in_path, scenarios, simulation_name, unit):
+def load_data(in_path, scenarios, simulation_name, unit, steps):
     """Read results and set timestep as index in dataframe
 
     Returns
     data_container : dataframes in [scenario][mode][weather_scenario]
     """
+    plot_decentarl_figures = True
     data_container = {}
-    data_container_fig6 = {}
+    data_container_fig_steps = {}
     modes = ['CENTRAL', 'DECENTRAL']
 
     for scenario in scenarios:
         data_container[scenario] = {}
-        data_container_fig6[scenario] = {}
+        data_container_fig_steps[scenario] = {}
 
         for mode in modes:
             data_container[scenario][mode] = {}
-            data_container_fig6[scenario][mode]  = {}
+            data_container_fig_steps[scenario][mode]  = {}
 
             # Iterate over weather scenarios
             path_scenarios = os.path.join(in_path, scenario, mode)
@@ -106,41 +107,41 @@ def load_data(in_path, scenarios, simulation_name, unit):
 
             for weather_scenario in weather_scenarios:
                 data_container[scenario][mode][weather_scenario] = {}
-                data_container_fig6[scenario][mode][weather_scenario] = {}
+                data_container_fig_steps[scenario][mode][weather_scenario] = {}
 
                 # ---------------------------
                 # Load restuls for fig6
                 # ---------------------------
-                '''if mode == 'DECENTRAL':
-                    steps = ['step1', 'step2', 'step3', 'step4']
-                    
-                    for step in steps:
-                        data_container_fig6[scenario][mode][weather_scenario][step] = {}
-                        data_container_fig6[scenario][mode][weather_scenario][step]['energy_supply_constrained'] = {}
-                        
-                        path_supply_mix = os.path.join(in_path, scenario, mode, weather_scenario, step, simulation_name, 'decision_0')
+                try:
+                    if mode == 'DECENTRAL':
 
-                        all_files = os.listdir(path_supply_mix)
+                        for step in steps:
+                            data_container_fig_steps[scenario][mode][weather_scenario][step] = {}
+                            data_container_fig_steps[scenario][mode][weather_scenario][step]['energy_supply_constrained'] = {}
+                            
+                            path_supply_mix = os.path.join(in_path, scenario, mode, weather_scenario, 'decentral_step_calculations', step, simulation_name, 'energy_supply_constrained', 'decision_0')
 
-                        for file_name in all_files:
-                            path_file = os.path.join(path_supply_mix, file_name)
-                            variable_name = file_name[7:-18]
-                            data_file = pd.read_csv(path_file)
+                            all_files = os.listdir(path_supply_mix)
 
-                            try: # test if seasonal_week_attribute
-                                _ = data_file.groupby(data_file['seasonal_week']).sum()
+                            for file_name in all_files:
+                                path_file = os.path.join(path_supply_mix, file_name)
+                                variable_name = file_name[7:-18]
+                                data_file = pd.read_csv(path_file)
 
-                                data = data_file.set_index('seasonal_week')
+                                try: # test if seasonal_week_attribute
+                                    _ = data_file.groupby(data_file['seasonal_week']).sum()
+                                    data = data_file.set_index('seasonal_week')
 
-                                if unit == 'GW':
-                                    data[variable_name] = data[variable_name] / 1000.0
-                                if unit == 'MW':
-                                    pass
-                            except:
-                                print("{} Data containes no seasonal_week attribute".format(file_name))
+                                    if unit == 'GW':
+                                        data[variable_name] = data[variable_name] / 1000.0
+                                    if unit == 'MW':
+                                        pass
+                                except:
+                                    print("{} Data containes no seasonal_week attribute".format(file_name))
 
-                            data_container_fig6[scenario][mode][weather_scenario][step]['energy_supply_constrained'][file_name] = data
-                '''
+                                data_container_fig_steps[scenario][mode][weather_scenario][step]['energy_supply_constrained'][file_name] = data
+                except:
+                    print("ERROR: could not read step data")
                 # ---------------------------
                 # Load energy_supply_constrained
                 # ---------------------------
@@ -169,7 +170,196 @@ def load_data(in_path, scenarios, simulation_name, unit):
 
                     data_container[scenario][mode][weather_scenario]['energy_supply_constrained'][file_name] = data
 
-    return data_container
+    return data_container, data_container_fig_steps
+
+def plot_step_figures(
+        path_out,
+        data_container_fig_steps,
+        metric_filenames,
+        scenarios,
+        weather_scearnio,
+        steps,
+        unit,
+        temporal_conversion_factor,
+        years=[2015, 2030, 2050],
+        seperate_legend=True
+    ):
+    fig_dict = {}
+    path_out_folder_fig5 = os.path.join(path_out, 'fig5')
+    mode = 'DECENTRAL'
+
+    for year in years:
+        fig_dict[year] = {}
+
+        for scenario in scenarios:
+            fig_dict[year][scenario] = {}
+
+            colors = []
+            df_to_plot = pd.DataFrame()
+            
+            metrics_to_plot = metric_filenames.keys()
+            for metric in metrics_to_plot:
+                for filname in metric_filenames[metric]:
+                    for step in steps:
+                            
+                        data_files = data_container_fig_steps[scenario][mode][weather_scearnio][step]['']
+
+                        for file_name, file_data in data_files.items():
+
+                            # Aggregate national data for every timesteps
+                            national_per_timesteps = file_data.groupby(file_data.index).sum()
+
+                            # Aggregate regional annual data
+                            try:
+                                regional_annual = file_data.set_index('energy_hub')
+                                regional_annual = regional_annual.groupby(regional_annual.index).sum()
+                            except:
+                                pass
+
+                            file_name_split_no_timpestep = file_name[:-9] #remove ending
+                            name_column = file_name_split_no_timpestep[7:-9] #remove output_ and ending
+                            file_name_split = file_name.split("_")
+                            year_simulation = int(file_name_split[-1][:4])
+
+                            if year == year_simulation:
+                                if file_name_split_no_timpestep in filnames:
+
+                                    # Add national_per_timesteps
+                                    df_to_plot[str(name_column)] = national_per_timesteps[name_column]
+
+                                    color = filenames[fueltype][file_name_split_no_timpestep]
+                                    colors.append(color)
+                                
+                                # Get fueltype specific files
+                                sum_file = national_per_timesteps[name_column].sum()
+
+                                if (file_name_split_no_timpestep in filenames['elec_hubs'].keys()) or (
+                                    file_name_split_no_timpestep in filenames['elec_transmission'].keys()):
+                                    fig_dict_fuelypes[year][mode][scenario]['electricity'] += sum_file
+                                elif (file_name_split_no_timpestep in filenames['gas_hubs'].keys()) or (
+                                    file_name_split_no_timpestep in filenames['gas_transmission'].keys()):
+                                    fig_dict_fuelypes[year][mode][scenario]['gas'] += sum_file
+                                elif file_name_split_no_timpestep in filenames['heat_hubs'].keys():
+                                    fig_dict_fuelypes[year][mode][scenario]['heat'] += sum_file
+                                elif file_name_split_no_timpestep in filenames['hydrogen_hubs'].keys():
+                                    fig_dict_fuelypes[year][mode][scenario]['hydrogen'] += sum_file
+
+                        # Aggregate annual demand for pie-charts
+                        fig_dict_piecharts[year][mode][scenario] = df_to_plot.sum()
+                        fig_dict_regional_annual_demand[year][mode][scenario] = df_to_plot_regional.sum(axis=1)
+
+                        fig_dict[year][mode][scenario] = df_to_plot.loc[hours_selected]
+
+        # ------------------------------------
+        # PLotting regional scpecific bar charts
+        # ------------------------------------
+        for scenario in scenarios:
+            table_all_regs = []
+
+            # Data and plot
+            # ------------
+            regions_right = fig_dict_regional_annual_demand[year][right][scenario]
+            regions_left = fig_dict_regional_annual_demand[year][left][scenario]
+
+            # Sorting
+            sored_df = regions_right.sort_values()
+            sorted_index = sored_df.index.tolist()
+
+            # Reorder index
+            regions_right = regions_right.reindex(sorted_index)
+            regions_left = regions_left.reindex(sorted_index)
+
+            # Convert from GW to TW
+            regions_right = regions_right / 1000
+            regions_left = regions_left / 1000
+            
+            # -------------------------
+            # Plotting all regions together
+            # -------------------------
+            fig, ax = plt.subplots()
+
+            df_bars = pd.DataFrame(
+                {right: regions_right.values.tolist(),
+                left: regions_left.values.tolist()},
+                index=regions_right.index)
+            
+            # Writing out txt
+            headers_all_regs = df_bars.columns.values.tolist()
+            headers_all_regs.insert(0, 'energy_hubs')
+            for index in df_bars.index:
+                reg_val = df_bars.loc[index].values.tolist()
+                reg_val.insert(0, index)
+                table_all_regs.append(reg_val)
+
+            colors_right_left = {
+                right: '#ddca7c',
+                left: '#4a8487'}
+
+            ax = df_bars.plot(
+                kind='bar',
+                width=0.8,
+                color=list(colors_right_left.values()))
+
+            ax.grid(which='major', color='white', axis='y', linestyle='-')
+
+            # ------------
+            # Limits
+            # ------------
+            #plt.ylim(0, 2 )
+
+            # Legend
+            # ------------
+            handles, labels = plt.gca().get_legend_handles_labels()
+
+            by_label = OrderedDict(zip(labels, handles))
+            legend = plt.legend(
+                by_label.values(),
+                by_label.keys(),
+                ncol=2,
+                prop={'size': 8},
+                loc='upper center',
+                bbox_to_anchor=(0.5, -0.1),
+                frameon=False)
+
+            # Remove frame
+            # ------------
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['bottom'].set_visible(True)
+            ax.spines['left'].set_visible(False)
+
+            # ------------------
+            # Ticks and labels
+            # ------------------
+            plt.tick_params(axis='y', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
+
+            #Axis label
+            ax.set_xlabel('Energy hub region')
+            ax.set_ylabel('TW')
+
+            # Reset figure size
+            fig = matplotlib.pyplot.gcf()
+            fig.set_size_inches(cm2inch(12, 6))
+
+            fig_name = "{}_{}_{}__barplots_comparison_all.pdf".format(scenario, year, fueltype)
+            path_out_file = os.path.join(path_out_folder_fig5, fig_name)
+            seperate_legend = True
+            if seperate_legend:
+                export_legend(
+                    legend,
+                    os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
+                legend.remove()
+
+            plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
+
+            # Write out results to txt
+            table_all_regs_tabulate = tabulate(
+                table_all_regs,
+                headers=headers_all_regs,
+                numalign="right")
+            write_to_txt(path_out_file[:-4] + ".txt", table_all_regs_tabulate)
+
+    return
 
 def plot_figures(
         path_out,
@@ -185,10 +375,40 @@ def plot_figures(
     ):
     """Create x-y chart of a time-span (x-axis: demand, y-axis: time)
     """
+    # Configuration
+    fontsize_small = 8
+    fontsize_large = 10
+    annote_crit = False #Add labels
+
+    modes = ['DECENTRAL', 'CENTRAL']
+    left = 'CENTRAL'
+    right = 'DECENTRAL'
+
+    # Font info axis labels
+    font_additional_info = {
+        'color': 'black',
+        'weight': 'bold',
+        'size': fontsize_large}
+
+    # https://www.ofgem.gov.uk/data-portal/electricity-generation-mix-quarter-and-fuel-source-gb
+    #Colors from ofgem
+    # gas: '#6699CC'
+    # nuclear:
+    # coal: FF9966
+    # oil: 339966
+    # hydro: 666699
+    # wind: CCCCCC
+    # Bioenergy: 333333
+    # interconnectors: 33CCCC
+    # pumped storage: FFCC33
+    fueltypes_coloring = {
+        'electricity': '#03674f',
+        'gas': '#6699CC',
+        'heat': '#e9c0fd',
+        'hydrogen': '#00242b'}
+
     for fueltype in types_to_plot:
         print(".... fueltype: {}".format(fueltype))
-
-        annote_crit = False #Add labels
 
         # Select hours to plots
         height_cm_xy_figure = 5 # Figure height of xy figure
@@ -200,38 +420,6 @@ def plot_figures(
         #height_cm_xy_figure = 10 # Figure height of xy figure
         #hours_selected = range(24 * (0) + 1, 24 * (6 + 1) + 1)
 
-        modes = ['DECENTRAL', 'CENTRAL']
-        left = 'CENTRAL'
-        right = 'DECENTRAL'
-
-        fontsize_small = 8
-        fontsize_large = 10
-
-        # Font info axis labels
-        font_additional_info = {
-            'color': 'black',
-            'weight': 'bold',
-            'size': fontsize_large}
-
-        #https://www.color-hex.com/color-palette/77223
-        fueltypes_coloring = {
-            'electricity': '#03674f',
-            'gas': '#6699CC',
-            'heat': '#e9c0fd',
-            'hydrogen': '#00242b'}
-
-        # https://www.ofgem.gov.uk/data-portal/electricity-generation-mix-quarter-and-fuel-source-gb
-        #Colors from ofgem
-        # gas: '#6699CC'
-        # nuclear:
-        # coal: FF9966
-        # oil: 339966
-        # hydro: 666699
-        # wind: CCCCCC
-        # Bioenergy: 333333
-        # interconnectors: 33CCCC
-        # pumped storage: FFCC33
-
         fig_dict = {}
         fig_dict_piecharts = {}
         fig_dict_fuelypes = {}
@@ -239,6 +427,7 @@ def plot_figures(
 
         path_out_folder_fig3 = os.path.join(path_out, 'fig3')
         path_out_folder_fig4 = os.path.join(path_out, 'fig4')
+
 
         for year in years:
             fig_dict[year] = {}
@@ -255,7 +444,8 @@ def plot_figures(
                 for scenario in scenarios:
                     fig_dict[year][mode][scenario] = {}
                     fig_dict_fuelypes[year][mode][scenario] = pd.DataFrame(
-                        [[0,0,0,0]], columns=fueltypes_coloring.keys())
+                        [[0,0,0,0]],
+                        columns=fueltypes_coloring.keys())
 
                     colors = []
                     data_files = data_container[scenario][mode][weather_scearnio]['energy_supply_constrained']
@@ -313,8 +503,6 @@ def plot_figures(
 
                     fig_dict[year][mode][scenario] = df_to_plot.loc[hours_selected]
 
-
-
             # ------------------------------------
             # PLotting regional scpecific bar charts
             # ------------------------------------
@@ -366,7 +554,6 @@ def plot_figures(
                     color=list(colors_right_left.values()))
 
                 ax.grid(which='major', color='white', axis='y', linestyle='-')
-
 
                 # ------------
                 # Limits

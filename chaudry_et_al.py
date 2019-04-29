@@ -13,10 +13,10 @@ example in the path (C:/path_results/EW/Central/NF1/SMIF_RESULTS)
                 ...
             decentral
                 WeatherScenario
-                        fig6_results    # Results for plotting figure 6
-                                step1 
-                                step2
-                                step3
+                        decentral_step_calculations    # Results for plotting figure 6
+                                step1                  # Results for step 1
+                                step2                  # Results for step 2
+                                step3                  # Results for step 3
                                 ...
                 ...
         MW     
@@ -51,18 +51,21 @@ factor_from_4_weeks_to_full_year = 1.0 / ((1.0 / (365/24)) * 4)
 shutil.rmtree(path_out) # delete results
 chaudry_et_al_functions.create_folder(path_out)
 
-figs = ['fig3', 'fig4', 'fig5', 'fig6']
+figs = ['fig3', 'fig4', 'fig5']
 
 for fig_name in figs:
     path_fig = os.path.join(path_out, fig_name)
     chaudry_et_al_functions.create_folder(path_fig)
 
-filenames = {
+metric_filenames = {
     'emissions': {
         'output_e_emissions_eh_timestep':'gray',
         'output_e_emissions_timestep': 'green',
         'output_h_emissions_eh_timestep': 'yellow',
-    },
+    }}
+
+filenames = {
+
     #Electricity Generation mix in energy hubs
     'elec_hubs': { 
         'output_eh_gas_fired_other_timestep': 'gray',
@@ -70,9 +73,10 @@ filenames = {
         'output_eh_chp_biomass_timestep': 'green',
         'output_eh_chp_waste_timestep': 'violet',
         'output_eh_fuel_cell_timestep': 'slateblue',
-        'output_eh_wind_power_timestep': 'firebrick',
-        'output_eh_pv_power_timestep': 'orange',
-        'output_eh_tran_e_timestep': 'darkcyan'},
+        #'output_eh_wind_power_timestep': 'firebrick',
+        'output_eh_wind_curtalied_timestep': 'firebrick',
+        'output_eh_wind_power_timestep': 'blue',
+        'output_eh_tran_e_timestep': 'darkcyan'}, 
 
     #Electricity Generation mix in electricity transmisison
     'elec_transmission': {
@@ -84,9 +88,10 @@ filenames = {
         'output_tran_interconnector_timestep': 'olivedrab',
         'output_tran_renewable_timestep': 'olivedrab',
         'output_e_reserve_timestep': 'olivedrab',
-        'output_tran_wind_power_timestep': 'olivedrab',
+        #'output_tran_wind_power_timestep': 'olivedrab', 
+        'output_tran_wind_offshore_timestep': 'olivedrab',
+        'output_tran_wind_onsore_timestep': 'olivedrab',
         'output_tran_pv_power_timestep': 'olivedrab',
-        'output_tran_wind_curtailed_timestep': 'olivedrab',
         'output_tran_pv_curtailed_timestep': 'olivedrab'},
 
     #Heat Supply Mix in energy hubs
@@ -135,22 +140,32 @@ filenames = {
     }
 
 }
+steps = ['step1', 'step2', 'step3', 'step4']
 
 # ------------------------
 # Load data
 # ------------------------
-data_container = chaudry_et_al_functions.load_data(
+data_container, data_container_fig_steps = chaudry_et_al_functions.load_data(
     path_in,
     simulation_name=simulation_name,
     scenarios=scenarios,
-    unit=unit)
+    unit=unit,
+    steps=steps)
 
-print("... finished loading data")
-raise Exception("FF")
 # ------------------------
 # Create figures
 # ------------------------
-# Dasboard figures
+'''chaudry_et_al_functions.plot_step_figures(
+    path_out=path_out,
+    data_container_fig_steps=data_container_fig_steps,
+    metric_filenames=metric_filenames,
+    scenarios=scenarios,
+    weather_scearnio=weather_scenario,
+    steps=steps,
+    unit=unit,
+    temporal_conversion_factor=factor_from_4_weeks_to_full_year,
+    years=[2015, 2030, 2050])'''
+
 chaudry_et_al_functions.plot_figures(
     path_out,
     data_container,
@@ -162,8 +177,5 @@ chaudry_et_al_functions.plot_figures(
     temporal_conversion_factor=factor_from_4_weeks_to_full_year)
 
 
-#except:
-#    raise Exception("failed ot print fig4")
-#chaudry_et_al_functions.fig_5(data_container, fueltype=fueltype)
-#chaudry_et_al_functions.fig_6(data_container, fueltype=fueltype)
+
 print("Finished creasting figures")
