@@ -57,6 +57,7 @@ for fig_name in figs:
     path_fig = os.path.join(path_out, fig_name)
     chaudry_et_al_functions.create_folder(path_fig)
 
+# Add more metric files to generate plots with step wise emission calcultions
 metric_filenames = {
     'emissions': {
         'output_e_emissions_eh_timestep':'gray',
@@ -64,6 +65,7 @@ metric_filenames = {
         'output_h_emissions_eh_timestep': 'yellow',
     }}
 
+# Files to plot for xy-plot and pie-chart (p4)
 filenames = {
 
     #Electricity Generation mix in energy hubs
@@ -76,7 +78,8 @@ filenames = {
         #'output_eh_wind_power_timestep': 'firebrick',
         'output_eh_wind_curtalied_timestep': 'firebrick',
         'output_eh_wind_power_timestep': 'blue',
-        'output_eh_tran_e_timestep': 'darkcyan'}, 
+        'output_eh_tran_e_timestep': 'darkcyan'
+        }, 
 
     #Electricity Generation mix in electricity transmisison
     'elec_transmission': {
@@ -140,7 +143,8 @@ filenames = {
     }
 
 }
-steps = ['step1', 'step2', 'step3', 'step4']
+steps = ['step1', 'step2', 'step3'] #, 'step4']
+years = [2015, 2030, 2050]
 
 # ------------------------
 # Load data
@@ -157,7 +161,7 @@ print("... finished loading data", flush=True)
 # ------------------------
 # Create figures
 # ------------------------
-'''chaudry_et_al_functions.plot_step_figures(
+chaudry_et_al_functions.plot_step_figures(
     path_out=path_out,
     data_container_fig_steps=data_container_fig_steps,
     metric_filenames=metric_filenames,
@@ -166,7 +170,7 @@ print("... finished loading data", flush=True)
     steps=steps,
     unit=unit,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year,
-    years=[2015, 2030, 2050])'''
+    years=years)
 
 chaudry_et_al_functions.plot_figures(
     path_out,

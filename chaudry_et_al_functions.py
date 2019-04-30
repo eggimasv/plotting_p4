@@ -185,181 +185,171 @@ def plot_step_figures(
         years=[2015, 2030, 2050],
         seperate_legend=True
     ):
-    '''fig_dict = {}
+    """Plot decentral step results
+    """
+    fig_dict = {}
     path_out_folder_fig5 = os.path.join(path_out, 'fig5')
     mode = 'DECENTRAL'
 
+    color_scenarios = {
+        'MV': 'brown',
+        'EW': 'steelblue'
+    }
+
     for year in years:
         fig_dict[year] = {}
-
-        for scenario in scenarios:
-            fig_dict[year][scenario] = {}
-
+        
+        for metric, filenames in metric_filenames.items():
+            fig_dict[year][metric] = {}
             colors = []
-            df_to_plot = pd.DataFrame()
-            
-            metrics_to_plot = metric_filenames.keys()
-            for metric in metrics_to_plot:
-                for filname in metric_filenames[metric]:
+            df_to_plot = pd.DataFrame(steps, columns=['x_labels'])
+            df_to_plot = df_to_plot.set_index('x_labels')
+
+            for scenario in scenarios:
+                colors.append(color_scenarios[scenario])
+                df_to_plot[scenario] = 0 #fill with empty
+
+                for metric_file_name, color_metric in filenames.items():
+
                     for step in steps:
-                            
-                        data_files = data_container_fig_steps[scenario][mode][weather_scearnio][step]['']
+                        data_files = data_container_fig_steps[scenario][mode][weather_scearnio][step]['energy_supply_constrained']
 
                         for file_name, file_data in data_files.items():
 
                             # Aggregate national data for every timesteps
-                            national_per_timesteps = file_data.groupby(file_data.index).sum()
+                            ##national_per_timesteps = file_data.groupby(file_data.index).sum()
 
                             # Aggregate regional annual data
                             try:
                                 regional_annual = file_data.set_index('energy_hub')
                                 regional_annual = regional_annual.groupby(regional_annual.index).sum()
                             except:
-                                pass
-
+                                print("no energy_hub attribute")
+                                try:
+                                    regional_annual = file_data.set_index('bus_bars')
+                                    regional_annual = regional_annual.groupby(regional_annual.index).sum()
+                                except:
+                                    print("no 'bus_bars' or 'energy_hub' attribute")
+                                    pass
+                
                             file_name_split_no_timpestep = file_name[:-9] #remove ending
                             name_column = file_name_split_no_timpestep[7:-9] #remove output_ and ending
                             file_name_split = file_name.split("_")
                             year_simulation = int(file_name_split[-1][:4])
 
                             if year == year_simulation:
-                                if file_name_split_no_timpestep in filnames:
+                                if file_name_split_no_timpestep == metric_file_name:
+                                    # Add National annual
+                                    #df_to_plot[scenario][step] = national_per_timesteps[name_column]
+                                    df_to_plot[scenario][step] = np.sum(regional_annual[name_column])
 
-                                    # Add national_per_timesteps
-                                    df_to_plot[str(name_column)] = national_per_timesteps[name_column]
-
-                                    color = filenames[fueltype][file_name_split_no_timpestep]
-                                    colors.append(color)
-                                
-                                # Get fueltype specific files
-                                sum_file = national_per_timesteps[name_column].sum()
-
-                                if (file_name_split_no_timpestep in filenames['elec_hubs'].keys()) or (
-                                    file_name_split_no_timpestep in filenames['elec_transmission'].keys()):
-                                    fig_dict_fuelypes[year][mode][scenario]['electricity'] += sum_file
-                                elif (file_name_split_no_timpestep in filenames['gas_hubs'].keys()) or (
-                                    file_name_split_no_timpestep in filenames['gas_transmission'].keys()):
-                                    fig_dict_fuelypes[year][mode][scenario]['gas'] += sum_file
-                                elif file_name_split_no_timpestep in filenames['heat_hubs'].keys():
-                                    fig_dict_fuelypes[year][mode][scenario]['heat'] += sum_file
-                                elif file_name_split_no_timpestep in filenames['hydrogen_hubs'].keys():
-                                    fig_dict_fuelypes[year][mode][scenario]['hydrogen'] += sum_file
-
-                        # Aggregate annual demand for pie-charts
-                        fig_dict_piecharts[year][mode][scenario] = df_to_plot.sum()
-                        fig_dict_regional_annual_demand[year][mode][scenario] = df_to_plot_regional.sum(axis=1)
-
-                        fig_dict[year][mode][scenario] = df_to_plot.loc[hours_selected]
+            fig_dict[year][metric] = df_to_plot
 
         # ------------------------------------
-        # PLotting regional scpecific bar charts
+        # Plott metrics
         # ------------------------------------
-        for scenario in scenarios:
-            table_all_regs = []
+        for year, metrics in fig_dict.items():
+            for metric, scenario_data in metrics.items():
+                table_all_regs = []
 
-            # Data and plot
-            # ------------
-            regions_right = fig_dict_regional_annual_demand[year][right][scenario]
-            regions_left = fig_dict_regional_annual_demand[year][left][scenario]
+                data_scenario_steps = df_to_plot
 
-            # Sorting
-            sored_df = regions_right.sort_values()
-            sorted_index = sored_df.index.tolist()
+                fig, ax = plt.subplots()
 
-            # Reorder index
-            regions_right = regions_right.reindex(sorted_index)
-            regions_left = regions_left.reindex(sorted_index)
+                # Plot lines
+                df_to_plot.plot(
+                    kind='line',
+                    ax=ax,
+                    colors=colors)
 
-            # Convert from GW to TW
-            regions_right = regions_right / 1000
-            regions_left = regions_left / 1000
-            
-            # -------------------------
-            # Plotting all regions together
-            # -------------------------
-            fig, ax = plt.subplots()
+                # Plot line dots
+                df_to_plot.plot(
+                    style=['.', '^'],
+                    ax=ax,
+                    ms=7,
+                    colors=colors,
+                    clip_on=False)
+                
+                table_all_regs = []
+                headers = df_to_plot.columns.tolist()
+                headers.insert(0, "step")
+                for i in df_to_plot.index:
+                    step_values = df_to_plot.loc[i].tolist()
+                    step_values.insert(0, i)
+                    table_all_regs.append(step_values)
 
-            df_bars = pd.DataFrame(
-                {right: regions_right.values.tolist(),
-                left: regions_left.values.tolist()},
-                index=regions_right.index)
-            
-            # Writing out txt
-            headers_all_regs = df_bars.columns.values.tolist()
-            headers_all_regs.insert(0, 'energy_hubs')
-            for index in df_bars.index:
-                reg_val = df_bars.loc[index].values.tolist()
-                reg_val.insert(0, index)
-                table_all_regs.append(reg_val)
+                # Legend
+                # ------------
+                handles, labels = plt.gca().get_legend_handles_labels()
 
-            colors_right_left = {
-                right: '#ddca7c',
-                left: '#4a8487'}
+                by_label = OrderedDict(zip(labels, handles))
+                legend = plt.legend(
+                    by_label.values(),
+                    by_label.keys(),
+                    ncol=2,
+                    prop={'size': 8},
+                    loc='upper center',
+                    bbox_to_anchor=(0.5, -0.1),
+                    frameon=False)
 
-            ax = df_bars.plot(
-                kind='bar',
-                width=0.8,
-                color=list(colors_right_left.values()))
+                # Remove frame
+                # ------------
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.spines['bottom'].set_visible(True)
+                ax.spines['left'].set_visible(True)
 
-            ax.grid(which='major', color='white', axis='y', linestyle='-')
+                # ------------------
+                # Ticks and labels
+                # ------------------
+                plt.tick_params(
+                    axis='y',
+                    which='both',
+                    left=True,
+                    right=False,
+                    bottom=False,
+                    top=False,
+                    labelbottom=False)
+                
+                # Remove minor ticks x-axis and add again
+                #plt.tick_params(axis='x', which='major', bottom=False)
+                #ax.set_xticklabels(df_to_plot.index.tolist())
+                
+                ticks = range(len(steps))
+                labels = df_to_plot.index.tolist()
+                plt.xticks(
+                    ticks=ticks,
+                    labels=labels,
+                    fontsize=8)
+    
+                # Limits
+                plt.xlim(-1, len(steps) + 1)
 
-            # ------------
-            # Limits
-            # ------------
-            #plt.ylim(0, 2 )
+                #Axis label
+                #ax.set_xlabel('Steps')
+                ax.set_ylabel('National Metric SUM')
 
-            # Legend
-            # ------------
-            handles, labels = plt.gca().get_legend_handles_labels()
+                # Reset figure size
+                fig = matplotlib.pyplot.gcf()
+                fig.set_size_inches(cm2inch(6, 6))
 
-            by_label = OrderedDict(zip(labels, handles))
-            legend = plt.legend(
-                by_label.values(),
-                by_label.keys(),
-                ncol=2,
-                prop={'size': 8},
-                loc='upper center',
-                bbox_to_anchor=(0.5, -0.1),
-                frameon=False)
+                fig_name = "{}_{}__metric_plot.pdf".format(metric, year)
+                path_out_file = os.path.join(path_out_folder_fig5, fig_name)
+                seperate_legend = True
+                if seperate_legend:
+                    export_legend(
+                        legend,
+                        os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
+                    legend.remove()
 
-            # Remove frame
-            # ------------
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['bottom'].set_visible(True)
-            ax.spines['left'].set_visible(False)
+                plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
 
-            # ------------------
-            # Ticks and labels
-            # ------------------
-            plt.tick_params(axis='y', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
-
-            #Axis label
-            ax.set_xlabel('Energy hub region')
-            ax.set_ylabel('TW')
-
-            # Reset figure size
-            fig = matplotlib.pyplot.gcf()
-            fig.set_size_inches(cm2inch(12, 6))
-
-            fig_name = "{}_{}_{}__barplots_comparison_all.pdf".format(scenario, year, fueltype)
-            path_out_file = os.path.join(path_out_folder_fig5, fig_name)
-            seperate_legend = True
-            if seperate_legend:
-                export_legend(
-                    legend,
-                    os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
-                legend.remove()
-
-            plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
-
-            # Write out results to txt
-            table_all_regs_tabulate = tabulate(
-                table_all_regs,
-                headers=headers_all_regs,
-                numalign="right")
-            write_to_txt(path_out_file[:-4] + ".txt", table_all_regs_tabulate)
-    '''
+                # Write out results to txt
+                table_all_regs_tabulate = tabulate(
+                    table_all_regs,
+                    headers=headers,
+                    numalign="right")
+                write_to_txt(path_out_file[:-4] + ".txt", table_all_regs_tabulate)
 
     return
 
@@ -929,6 +919,7 @@ def plot_figures(
                             wedgeprops=dict(width=new_radius * 0.4))'''
                         data_pie_chart.plot(
                             kind='pie',
+                            labels=None,
                             explode=explode_distance,
                             radius=new_radius,
                             wedgeprops=dict(width=new_radius * 0.4),
