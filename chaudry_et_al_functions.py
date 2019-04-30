@@ -142,6 +142,7 @@ def load_data(in_path, scenarios, simulation_name, unit, steps):
                                 data_container_fig_steps[scenario][mode][weather_scenario][step]['energy_supply_constrained'][file_name] = data
                 except:
                     print("ERROR: could not read step data")
+
                 # ---------------------------
                 # Load energy_supply_constrained
                 # ---------------------------
@@ -184,7 +185,7 @@ def plot_step_figures(
         years=[2015, 2030, 2050],
         seperate_legend=True
     ):
-    fig_dict = {}
+    '''fig_dict = {}
     path_out_folder_fig5 = os.path.join(path_out, 'fig5')
     mode = 'DECENTRAL'
 
@@ -358,6 +359,7 @@ def plot_step_figures(
                 headers=headers_all_regs,
                 numalign="right")
             write_to_txt(path_out_file[:-4] + ".txt", table_all_regs_tabulate)
+    '''
 
     return
 
@@ -448,7 +450,7 @@ def plot_figures(
                         [[0,0,0,0]],
                         columns=fueltypes_coloring.keys())
 
-                    colors = []
+                    colors_xy_plot = []
                     data_files = data_container[scenario][mode][weather_scearnio]['energy_supply_constrained']
 
                     files_to_plot = filenames[fueltype].keys()
@@ -482,7 +484,7 @@ def plot_figures(
                                 df_to_plot_regional[str(name_column)] = regional_annual[name_column]
 
                                 color = filenames[fueltype][file_name_split_no_timpestep]
-                                colors.append(color)
+                                colors_xy_plot.append(color)
                             
                             # Get fueltype specific files
                             sum_file = national_per_timesteps[name_column].sum()
@@ -729,7 +731,6 @@ def plot_figures(
                         legend.remove()
 
                     plt.tight_layout()
-                    #plt.show()
 
                     plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
                     plt.close('all')
@@ -774,13 +775,11 @@ def plot_figures(
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
                 plt.close('all')
 
-                # Write out results to txt
                 table_tabulate = tabulate(
                     table_out,
                     headers=headers,
                     numalign="right")
                 write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
-
 
             # ----------------------
             # Fueltype chart showing the split between fueltypes
@@ -878,7 +877,6 @@ def plot_figures(
                     plt.savefig(path_out_file)
                     plt.close('all')
 
-                    # Write out results to txt
                     table_tabulate = tabulate(
                         table_out,
                         headers=headers,
@@ -924,17 +922,22 @@ def plot_figures(
                     fig, ax = plt.subplots(figsize=cm2inch(4.5, 5))
 
                     if not annote_crit:
-                        plt.pie(
+                        '''plt.pie(
                             data_pie_chart.values,
                             explode=explode_distance,
                             radius=new_radius,
-                            wedgeprops=dict(width=new_radius * 0.4))
+                            wedgeprops=dict(width=new_radius * 0.4))'''
+                        data_pie_chart.plot(
+                            kind='pie',
+                            explode=explode_distance,
+                            radius=new_radius,
+                            wedgeprops=dict(width=new_radius * 0.4),
+                            colors=colors_xy_plot)
                     else:
                         # ---------------------
                         # Plot annotations of pie chart
                         # ---------------------
                         min_label_crit = 1 #[%] Minimum label criterium 
-                        # Round
                         labels_p = data_pie_chart.values / total_sum
                         labels = labels_p.round(3) * 100 #to percent
 
@@ -993,12 +996,10 @@ def plot_figures(
                                             horizontalalignment=horizontalalignment, **kw)
                         '''
 
-                    # Labels
                     plt.xlabel('')
                     plt.ylabel('')
 
                     # Legend
-                    # ------------
                     legend = plt.legend(
                         labels=data_pie_chart.index,
                         ncol=2,
@@ -1008,7 +1009,6 @@ def plot_figures(
                         frameon=False)
 
                     # Save pdf of figure and legend
-                    # ------------
                     fig_name = "{}_{}_{}_{}__pie.pdf".format(scenario, year, fueltype, mode)
                     path_out_file = os.path.join(path_out_folder_fig3, fig_name)
 
@@ -1018,24 +1018,15 @@ def plot_figures(
                             os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
                         legend.remove()
 
-                    # Limits
-                    # ------------
-                    #plt.autoscale(enable=True, axis='x', tight=True)
-                    #plt.autoscale(enable=True, axis='y', tight=True)
-                    #plt.tight_layout()
-
                     # Remove frame
-                    # ------------
                     ax.spines['top'].set_visible(False)
                     ax.spines['right'].set_visible(False)
                     ax.spines['bottom'].set_visible(False)
                     ax.spines['left'].set_visible(False)
 
-                    #plt.show()
                     plt.savefig(path_out_file)
                     plt.close('all')
 
-                    # Write out results to txt
                     table_tabulate = tabulate(
                         table_out, headers=['mode', 'type', 'absolute', 'relative'],
                         numalign="right")
@@ -1045,11 +1036,10 @@ def plot_figures(
             # Plot x-y graph
             # ----------
             for scenario in scenarios:
-                print("xy-graph: {}   {}".format(year, scenario))
+                print("... plotting xy-graph: {}   {}".format(year, scenario))
                 table_out = []
 
                 # Data and plot
-                # ------------
                 df_right = fig_dict[year][right][scenario]
                 df_left = fig_dict[year][left][scenario]
                 
@@ -1075,11 +1065,21 @@ def plot_figures(
                 table_out.append([])
 
                 fig, ax = plt.subplots(figsize=cm2inch(9, height_cm_xy_figure))
-                df_right.plot(kind='barh', ax=ax, width=1.0, stacked=True, color=colors)
-                df_left.plot(kind='barh', ax=ax, width=1.0, legend=False, stacked=True,  color=colors)
+                df_right.plot(
+                    kind='barh',
+                    ax=ax,
+                    width=1.0,
+                    stacked=True,
+                    color=colors_xy_plot)
+                df_left.plot(
+                    kind='barh',
+                    ax=ax,
+                    width=1.0,
+                    legend=False,
+                    stacked=True, 
+                    color=colors_xy_plot)
 
                 # Add vertical line
-                # ------------
                 ax.axvline(linewidth=1, color='black')
                 
                 # Title
@@ -1117,9 +1117,7 @@ def plot_figures(
                     fontsize=fontsize_small)
 
                 # Legend
-                # ------------
                 handles, labels = plt.gca().get_legend_handles_labels()
-
                 by_label = OrderedDict(zip(labels, handles)) # remove duplicates
                 legend = plt.legend(
                     by_label.values(),
@@ -1131,24 +1129,20 @@ def plot_figures(
                     frameon=False)
 
                 # Remove frame
-                # ------------
                 ax.spines['top'].set_visible(False)
                 ax.spines['right'].set_visible(False)
                 ax.spines['bottom'].set_visible(False)
                 ax.spines['left'].set_visible(False)
 
                 # Limits
-                # ------------
                 plt.autoscale(enable=True, axis='x', tight=True)
                 plt.autoscale(enable=True, axis='y', tight=True)
 
                 # Add grid lines
-                # ------------
                 ax.grid(which='major', color='black', axis='y', linestyle='--')
                 plt.tick_params(axis='y', which='both', left=False) #remove ticks
 
                 # Save pdf of figure and legend
-                # ------------
                 fig_name = "{}_{}_{}__xy_plot.pdf".format(scenario, year, fueltype)
                 path_out_file = os.path.join(path_out_folder_fig3, fig_name)
 
@@ -1164,8 +1158,7 @@ def plot_figures(
                 #plt.ylabel("Time: {}".format(seasonal_week_day),  fontdict=font_additional_info)
                 plt.ylabel("Hour of peak day")
                 plt.savefig(path_out_file)
-                
-                # Write out results to txt
+
                 table_tabulate = tabulate(
                     table_out,
                     headers=headers,
