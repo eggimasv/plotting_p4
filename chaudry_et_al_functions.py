@@ -180,7 +180,7 @@ def plot_step_figures(
         scenarios,
         weather_scearnio,
         steps,
-        unit,
+        unit_metric,
         temporal_conversion_factor,
         years=[2015, 2030, 2050],
         seperate_legend=True
@@ -266,7 +266,7 @@ def plot_step_figures(
                 df_to_plot.plot(
                     style=['.', '^'],
                     ax=ax,
-                    ms=7,
+                    ms=6,
                     colors=colors,
                     clip_on=False)
                 
@@ -323,11 +323,11 @@ def plot_step_figures(
                     fontsize=8)
     
                 # Limits
-                plt.xlim(-1, len(steps) + 1)
+                plt.xlim(-1, len(steps))
 
                 #Axis label
-                #ax.set_xlabel('Steps')
-                ax.set_ylabel('National Metric SUM')
+                ax.set_xlabel('')
+                ax.set_ylabel('{} [{}]'.format(metric, unit_metric[metric]))
 
                 # Reset figure size
                 fig = matplotlib.pyplot.gcf()

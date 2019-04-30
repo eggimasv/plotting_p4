@@ -57,14 +57,19 @@ for fig_name in figs:
     path_fig = os.path.join(path_out, fig_name)
     chaudry_et_al_functions.create_folder(path_fig)
 
-# Add more metric files to generate plots with step wise emission calcultions
+# Add more metric files to generate plots with step wise emission calcultions (also add unit below)
 metric_filenames = {
     'emissions': {
+        # Metric 
         'output_e_emissions_eh_timestep':'gray',
         'output_e_emissions_timestep': 'green',
         'output_h_emissions_eh_timestep': 'yellow',
     }}
 
+# Units of metric
+unit_metric = {
+    'emissions': 'unit??'
+}
 # Files to plot for xy-plot and pie-chart (p4)
 filenames = {
 
@@ -168,7 +173,7 @@ chaudry_et_al_functions.plot_step_figures(
     scenarios=scenarios,
     weather_scearnio=weather_scenario,
     steps=steps,
-    unit=unit,
+    unit_metric=unit_metric,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year,
     years=years)
 
