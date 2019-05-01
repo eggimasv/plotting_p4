@@ -32,6 +32,9 @@ import chaudry_et_al_functions
 path_out = "C:/_test"   # Path to store results
 path_in = "C:/Users/cenv0553/nismod2/results/PLOTTINGFOLDER" # Path with model runs
 
+path_shapefile_regions = "C:/Users/cenv0553/plotting_p4/shapefile/EH_Region_Boundaries.shp"
+#path_shapefile_busbars = "C:/Users/cenv0553/plotting_p4/shapefile/EH_Region_Boundaries.shp"
+
 # Configure simulation names
 simulation_name = 'energy_sd_constrained'   # Name of model
 
@@ -51,7 +54,7 @@ factor_from_4_weeks_to_full_year = 1.0 / ((1.0 / (365/24)) * 4)
 shutil.rmtree(path_out) # delete results
 chaudry_et_al_functions.create_folder(path_out)
 
-figs = ['fig3', 'fig4', 'fig5']
+figs = ['fig3', 'fig4', 'fig5', 'fig6']
 
 for fig_name in figs:
     path_fig = os.path.join(path_out, fig_name)
@@ -166,6 +169,16 @@ print("... finished loading data", flush=True)
 # ------------------------
 # Create figures
 # ------------------------
+chaudry_et_al_functions.plot_maps(
+    path_out,
+    path_shapefile_regions,
+    data_container,
+    metric_filenames=metric_filenames,
+    years=years,
+    scenarios=scenarios,
+    weather_scearnio=weather_scenario,
+    temporal_conversion_factor=factor_from_4_weeks_to_full_year)
+
 chaudry_et_al_functions.plot_step_figures(
     path_out=path_out,
     data_container_fig_steps=data_container_fig_steps,

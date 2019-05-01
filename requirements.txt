@@ -1,0 +1,8 @@
+# Requirements. Pip install with 'pip install --no-cache-dir -r requirements.txt' or 'python -m pip install -r requirements.txt'. If cartopy fails, try: conda install cartopy
+numpy
+cartopy
+pandas
+matplotlib
+tabulate
+GEOS
+Proj

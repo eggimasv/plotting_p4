@@ -5,10 +5,15 @@ import math
 from collections import OrderedDict
 import pandas as pd
 import numpy as np
-import matplotlib
-from matplotlib import pyplot as plt
-from matplotlib import rcParams
+from collections import defaultdict
 from tabulate import tabulate
+import argparse
+
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+from matplotlib import colorbar, colors
+from matplotlib.colors import Normalize
 
 # Set default font
 rcParams['font.family'] = 'sans-serif'
@@ -154,7 +159,6 @@ def load_data(in_path, scenarios, simulation_name, unit, steps):
                 for file_name in all_files:
                     path_file = os.path.join(path_supply_mix, file_name)
                     variable_name = file_name[7:-18]
-
                     data_file = pd.read_csv(path_file)
 
                     try:
@@ -172,6 +176,185 @@ def load_data(in_path, scenarios, simulation_name, unit, steps):
                     data_container[scenario][mode][weather_scenario]['energy_supply_constrained'][file_name] = data
 
     return data_container, data_container_fig_steps
+
+'''def choropleth(ax, attr, cmap_name): #
+    # We need to normalize the values before we can
+    # use the colormap.
+    values = [c.attributes[attr] for c in africa]
+    norm = Normalize(
+        vmin=min(values), vmax=max(values))
+    cmap = plt.cm.get_cmap(cmap_name)
+    for c in africa:
+        v = c.attributes[attr]
+        sp = ShapelyFeature(c.geometry, crs,
+                            edgecolor='k',
+                            facecolor=cmap(norm(v)))
+        ax.add_feature(sp)
+'''
+'''
+def classify_values(diff_2020_2050_reg_share):      
+    """Classify values
+    """
+    regions = diff_2020_2050_reg_share.index
+    relclassified_values = pd.DataFrame()
+    relclassified_values['reclassified'] = 0
+    relclassified_values['name'] = regions
+    relclassified_values = relclassified_values.set_index(('name'))
+    relclassified_values['name'] = regions
+
+    for region in regions.values:
+        relclassified_values.loc[region, 'reclassified'] = clasify_color(diff_mean, diff_std, threshold=threshold)
+
+    return relclassified_values
+'''
+'''
+def clasify_color(diff_mean, diff_std, threshold):
+    if diff_mean < -1 * threshold and diff_std < -1 * threshold:
+        color_pos = 3
+    elif diff_mean > threshold and diff_std < -1 * threshold:
+        color_pos = 2
+    elif diff_mean < -1 * threshold and diff_std > threshold:
+        color_pos = 4
+    elif diff_mean > threshold and diff_std > threshold:
+        color_pos = 1
+    else:
+        color_pos = 0
+
+    return color_pos 
+'''
+def plot_maps(
+        path_out,
+        path_shapefile_regions,
+        data_container,
+        metric_filenames,
+        scenarios,
+        years,
+        weather_scearnio,
+        temporal_conversion_factor,
+        seperate_legend=True
+    ):
+    """Plot spatial maps
+
+    Choropleth example: https://ipython-books.github.io/146-manipulating-geospatial-data-with-cartopy/
+    """
+    import cartopy.crs as ccrs
+    import cartopy.io.shapereader as shpreader
+
+    path_out_folder_fig6 = os.path.join(path_out, 'fig6')
+    
+    # Classification colors
+    cmap_name = 'Reds'
+
+    color_manuals = {
+        0: '#f7f7f7', #Threshold change limit
+        1: '#e66101', #'red',
+        2: '#fdb863', #'tomato',
+        3: '#5e3c99', #'seagreen',
+        4: '#b2abd2'} #'orange'}
+    modes = ['CENTRAL', 'DECENTRAL']
+
+    # Read shapefile
+    shapefile_regions = shpreader.Reader(path_shapefile_regions)
+    
+    regions_regions = []
+    for record in shapefile_regions.records():
+        region_name = record.attributes['Region_Num']
+        regions_regions.append(region_name)
+
+    fig_dict = {}
+    for year in years:
+        fig_dict[year] = {}
+
+        for scenario in scenarios:
+            
+            df_to_plot = pd.DataFrame(regions_regions, columns=['regions'])
+            df_to_plot = df_to_plot.set_index('regions')
+
+            for metric, filenames in metric_filenames.items():
+                for mode in modes:
+                    for metric_file_name, color_metric in filenames.items():
+                        df_to_plot[mode] = 0
+
+                        data_files = data_container[scenario][mode][weather_scearnio]['energy_supply_constrained']
+
+                        for file_name, file_data in data_files.items():
+
+                            # Aggregate regional  
+                            try: 
+                                regional_annual = file_data.set_index('energy_hub')
+                                regional_annual = regional_annual.groupby(regional_annual.index).sum()
+                            except:
+                                print("no energy_hub attribute")
+                                try:
+                                    regional_annual = file_data.set_index('bus_bars')
+                                    regional_annual = regional_annual.groupby(regional_annual.index).sum()
+                                except:
+                                    print("no 'bus_bars' or 'energy_hub' attribute")
+                
+                            file_name_split_no_timpestep = file_name[:-9]    #remove ending
+                            name_column = file_name_split_no_timpestep[7:-9] #remove output_ and ending
+                            file_name_split = file_name.split("_")
+                            year_simulation = int(file_name_split[-1][:4])
+
+                            if year == year_simulation:
+                                if file_name_split_no_timpestep == metric_file_name:
+                                    df_to_plot[mode] = regional_annual[name_column].tolist()
+
+            fig_dict[year][metric] = df_to_plot
+
+    # Actual plotting
+    for year in years:
+        for metric in metric_filenames.keys():
+            for mode in modes:
+
+
+                values = fig_dict[year][metric][mode]
+
+                # Choropleth map colors
+                norm = Normalize(vmin=min(values), vmax=max(values))
+                cmap = plt.cm.get_cmap(cmap_name)
+
+                # Use Cartopy to plot geometries with reclassified faceolor
+                plt.figure(figsize=cm2inch(4, 6), dpi=300)
+                proj = ccrs.OSGB() #'epsg:27700'
+                ax = plt.axes(projection=proj)
+                ax.outline_patch.set_visible(False)
+
+                # set up a dict to hold geometries keyed by our key
+                geoms_by_key = defaultdict(list)
+                
+                # for each records, pick out our key's value from the record
+                # and store the geometry in the relevant list under geoms_by_key
+                for record in shapefile_regions.records():
+                    region_name = record.attributes['Region_Num']
+                    geoms_by_key[region_name].append(record.geometry)
+
+                # now we have all the geometries in lists for each value of our key
+                # add them to the axis, using the relevant color as facecolor
+                for region_name, geoms in geoms_by_key.items():
+                    value_region = values[region_name]
+
+                    # Manual classification (see fig_3_plot_over_time)
+                    #region_reclassified_value = reclassified.loc[key]['reclassified']
+                    #facecolor = color_manuals[region_reclassified_value]
+
+                    # Choropleth
+                    facecolor = cmap(norm(value_region))
+                    ax.add_geometries(geoms, crs=proj, edgecolor='black', facecolor=facecolor, linewidth=0.1)
+
+                # Get Legend #TODO
+                #cbar = colorbar.ColorbarBase(ax, cmap=cmap, norm=norm)
+                #cbar.set_clim(min(values), max(values)) # set limits of color map
+
+                filname = "{}_{}_{}_{}__map.pdf".format(year, scenario, metric, mode)
+
+                #if seperate_legend: 
+                #    export_legend(cbar, os.path.join(path_out_folder_fig6, "{}__legend.pdf".format(filname)))
+                #    cb.remove()
+
+                plt.tight_layout()
+                plt.savefig(os.path.join(path_out_folder_fig6, filname))
+                plt.close()
 
 def plot_step_figures(
         path_out,
@@ -246,7 +429,7 @@ def plot_step_figures(
             fig_dict[year][metric] = df_to_plot
 
         # ------------------------------------
-        # Plott metrics
+        # Plot metrics
         # ------------------------------------
         for year, metrics in fig_dict.items():
             for metric, scenario_data in metrics.items():
@@ -330,7 +513,7 @@ def plot_step_figures(
                 ax.set_ylabel('{} [{}]'.format(metric, unit_metric[metric]))
 
                 # Reset figure size
-                fig = matplotlib.pyplot.gcf()
+                fig = plt.gcf()
                 fig.set_size_inches(cm2inch(6, 6))
 
                 fig_name = "{}_{}__metric_plot.pdf".format(metric, year)
@@ -589,7 +772,7 @@ def plot_figures(
                 ax.set_ylabel('TW')
 
                 # Reset figure size
-                fig = matplotlib.pyplot.gcf()
+                fig = plt.gcf()
                 fig.set_size_inches(cm2inch(12, 6))
 
                 fig_name = "{}_{}_{}__barplots_comparison_all.pdf".format(scenario, year, fueltype)
@@ -703,7 +886,7 @@ def plot_figures(
                     # Reset figure size
                     widht=0.5
                     height=3
-                    fig = matplotlib.pyplot.gcf()
+                    fig = plt.gcf()
                     fig.set_size_inches(cm2inch(widht, height))
 
                     #plt.autoscale(enable=True, axis='x', tight=True)
@@ -754,7 +937,7 @@ def plot_figures(
                 plt.tick_params(axis='x', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
 
                 # Rest size
-                fig = matplotlib.pyplot.gcf()
+                fig = plt.gcf()
                 fig.set_size_inches(cm2inch(widht, height))
 
                 ax.legend().set_visible(False)
@@ -854,7 +1037,7 @@ def plot_figures(
                     plt.tight_layout()
 
                     # Reset figure size
-                    fig = matplotlib.pyplot.gcf()
+                    fig = plt.gcf()
                     fig.set_size_inches(cm2inch(4.0, 0.3))
 
                     # Remove frame
