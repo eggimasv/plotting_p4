@@ -410,15 +410,13 @@ def plot_maps(
                         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
                         sm._A = []
                         plt.colorbar(sm, ax=ax_cb)
-                        
                         plt.axis('off')
-                        #plt.tight_layout()
+
                         plt.savefig(
                             os.path.join(path_out_folder_fig6, "{}__legend.pdf".format(filname)),
                             bbox_inches='tight')
                         
                         plt.close()
-
 
 def plot_step_figures(
         path_out,

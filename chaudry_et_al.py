@@ -84,7 +84,6 @@ filenames = {
         'output_eh_chp_biomass_timestep': 'green',
         'output_eh_chp_waste_timestep': 'violet',
         'output_eh_fuel_cell_timestep': 'slateblue',
-        #'output_eh_wind_power_timestep': 'firebrick',
         'output_eh_wind_curtalied_timestep': 'firebrick',
         'output_eh_wind_power_timestep': 'blue',
         'output_eh_tran_e_timestep': 'darkcyan'
@@ -100,7 +99,6 @@ filenames = {
         'output_tran_interconnector_timestep': 'olivedrab',
         'output_tran_renewable_timestep': 'olivedrab',
         'output_e_reserve_timestep': 'olivedrab',
-        #'output_tran_wind_power_timestep': 'olivedrab', 
         'output_tran_wind_offshore_timestep': 'olivedrab',
         'output_tran_wind_onsore_timestep': 'olivedrab',
         'output_tran_pv_power_timestep': 'olivedrab',
