@@ -329,7 +329,6 @@ def plot_maps(
                     fig_dict[year][metric] = {'region_type': region_type_metric, 'data': df_to_plot_energyhubs}
 
     if create_cartopy_maps:
-
         # Actual plotting with cartopy
 
         # Classification colors
@@ -407,12 +406,17 @@ def plot_maps(
                     # Save colorbar
                     if seperate_legend:
                         # draw a new figure and replot the colorbar there
-                        fig_cb, ax_cb = plt.subplots(figsize=cm2inch(0.5, 3))
+                        fig_cb, ax_cb = plt.subplots(figsize=cm2inch(1, 3))
                         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
                         sm._A = []
-                        plt.colorbar(sm, ax=ax)
-                        plt.tight_layout()
-                        plt.savefig(os.path.join(path_out_folder_fig6, "{}__legend.pdf".format(filname)))
+                        plt.colorbar(sm, ax=ax_cb)
+                        
+                        plt.axis('off')
+                        #plt.tight_layout()
+                        plt.savefig(
+                            os.path.join(path_out_folder_fig6, "{}__legend.pdf".format(filname)),
+                            bbox_inches='tight')
+                        
                         plt.close()
 
 
