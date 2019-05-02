@@ -233,7 +233,7 @@ def plot_maps(
         weather_scearnio,
         temporal_conversion_factor,
         seperate_legend=True,
-        write_out_only_txt=True
+        create_cartopy_maps=True
     ):
     """Plot spatial maps
 
@@ -243,16 +243,6 @@ def plot_maps(
     import cartopy.io.shapereader as shpreader
 
     path_out_folder_fig6 = os.path.join(path_out, 'fig6')
-    
-    # Classification colors
-    cmap_name = 'Reds'
-
-    color_manuals = {
-        0: '#f7f7f7', #Threshold change limit
-        1: '#e66101', #'red',
-        2: '#fdb863', #'tomato',
-        3: '#5e3c99', #'seagreen',
-        4: '#b2abd2'} #'orange'}
     modes = ['CENTRAL', 'DECENTRAL']
 
     # Read shapefiles
@@ -321,34 +311,43 @@ def plot_maps(
                                         df_to_plot_energyhubs[mode] = regional_annual[name_column].tolist()
 
                                     # Write out all restuls (that could be plotted in ArcGIS)
-                                    if write_out_only_txt:
-                                        if region_type == 'bus_bars':
-                                            values = df_to_plot_busbars[mode].to_frame()
-                                        if region_type == 'energy_hub':
-                                            values = df_to_plot_energyhubs[mode].to_frame()
-       
-                                        filename = "{}_{}_{}_{}_{}__map_values.txt".format(year, scenario, metric, mode, region_type)
-                                        values.to_csv(
-                                            os.path.join(path_out_folder_fig6, filename),
-                                            header=True,
-                                            index=True,
-                                            sep=',') #, mode='a')
+                                    if region_type == 'bus_bars':
+                                        values = df_to_plot_busbars[mode].to_frame()
+                                    if region_type == 'energy_hub':
+                                        values = df_to_plot_energyhubs[mode].to_frame()
+    
+                                    filename = "{}_{}_{}_{}_{}__map_values.txt".format(year, scenario, metric, mode, region_type)
+                                    values.to_csv(
+                                        os.path.join(path_out_folder_fig6, filename),
+                                        header=True,
+                                        index=True,
+                                        sep=',') #, mode='a')
                 
                 if region_type_metric == 'bus_bars':
                     fig_dict[year][metric] = {'region_type': region_type_metric, 'data': df_to_plot_busbars}
                 if region_type_metric == 'energy_hub':
                     fig_dict[year][metric] = {'region_type': region_type_metric, 'data': df_to_plot_energyhubs}
 
-    if write_out_only_txt:
-        pass   
-    else:
-        # Actual plotting
+    if create_cartopy_maps:
+
+        # Actual plotting with cartopy
+
+        # Classification colors
+        cmap_name = 'Reds'
+
+        color_manuals = {
+            0: '#f7f7f7', #Threshold change limit
+            1: '#e66101', #'red',
+            2: '#fdb863', #'tomato',
+            3: '#5e3c99', #'seagreen',
+            4: '#b2abd2'} #'orange'}
+
         for year in years:
             for metric in metric_filenames.keys():
                 for mode in modes:
                     
-                    region_type = fig_dict[year][metric]['region_tye']
-                    values = fig_dict[year][metric]['values'][mode]
+                    region_type = fig_dict[year][metric]['region_type']
+                    values = fig_dict[year][metric]['data'][mode]
 
                     # Choropleth map colors, colorbar colors
                     min_value = min(values)
@@ -358,7 +357,7 @@ def plot_maps(
 
                     # Use Cartopy to plot geometries with reclassified faceolor
                     plt.figure(figsize=cm2inch(4, 6), dpi=300)
-                    proj = ccrs.OSGB() #'epsg:27700'
+                    proj = ccrs.OSGB()
                     ax = plt.axes(projection=proj)
                     ax.outline_patch.set_visible(False)
 

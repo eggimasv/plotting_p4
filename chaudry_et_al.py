@@ -180,7 +180,7 @@ chaudry_et_al_functions.plot_maps(
     scenarios=scenarios,
     weather_scearnio=weather_scenario,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year,
-    write_out_only_txt=True)
+    create_cartopy_maps=True)
 
 chaudry_et_al_functions.plot_step_figures(
     path_out=path_out,
