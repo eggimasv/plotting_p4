@@ -32,18 +32,16 @@ import chaudry_et_al_functions
 path_out = "C:/_test"   # Path to store results
 path_in = "C:/Users/cenv0553/nismod2/results/PLOTTINGFOLDER" # Path with model runs
 
-path_shapefile_regions = "C:/Users/cenv0553/plotting_p4/shapefile/EH_Region_Boundaries.shp"
-#path_shapefile_busbars = "C:/Users/cenv0553/plotting_p4/shapefile/EH_Region_Boundaries.shp"
+path_shapefile_energyhub = "C:/Users/cenv0553/plotting_p4/shapefile/EH_Region_Boundaries.shp"
+path_shapefile_busbars = "C:/Users/cenv0553/plotting_p4/shapefile/ElectricityBus_29.shp"
 
 # Configure simulation names
 simulation_name = 'energy_sd_constrained'   # Name of model
 
-scenarios = ['EW', 'MV',] 
+scenarios = ['EW', 'MV'] 
 weather_scenario = 'NF1'
 fueltype = 'electricity'
 unit = 'GW'
-#file_format = 'pdf'
-
 
 # Temporal conversion of results, From seasonal to annual results
 factor_from_4_weeks_to_full_year = 1.0 / ((1.0 / (365/24)) * 4)
@@ -51,7 +49,7 @@ factor_from_4_weeks_to_full_year = 1.0 / ((1.0 / (365/24)) * 4)
 # ------------------------
 # Create empty result folders and delte preivous results
 # ------------------------
-shutil.rmtree(path_out) # delete results
+shutil.rmtree(path_out)
 chaudry_et_al_functions.create_folder(path_out)
 
 figs = ['fig3', 'fig4', 'fig5', 'fig6']
@@ -62,17 +60,20 @@ for fig_name in figs:
 
 # Add more metric files to generate plots with step wise emission calcultions (also add unit below)
 metric_filenames = {
-    'emissions': {
-        # Metric 
-        'output_e_emissions_eh_timestep':'gray',
-        'output_e_emissions_timestep': 'green',
-        'output_h_emissions_eh_timestep': 'yellow',
-    }}
+    'emissions_eh': {'output_e_emissions_eh_timestep':'gray'},
+    'e_emissions': {'output_e_emissions_timestep': 'green'},
+    'h_emissions': {'output_h_emissions_eh_timestep': 'yellow'},
+    }
 
 # Units of metric
 unit_metric = {
-    'emissions': 'unit??'
+    'emissions_eh': 'unit??',
+    'e_emissions': 'unit??',
+    'h_emissions': 'unit??',
 }
+
+# For plotting maps
+
 # Files to plot for xy-plot and pie-chart (p4)
 filenames = {
 
@@ -171,13 +172,15 @@ print("... finished loading data", flush=True)
 # ------------------------
 chaudry_et_al_functions.plot_maps(
     path_out,
-    path_shapefile_regions,
+    path_shapefile_energyhub,
+    path_shapefile_busbars,
     data_container,
     metric_filenames=metric_filenames,
     years=years,
     scenarios=scenarios,
     weather_scearnio=weather_scenario,
-    temporal_conversion_factor=factor_from_4_weeks_to_full_year)
+    temporal_conversion_factor=factor_from_4_weeks_to_full_year,
+    write_out_only_txt=True)
 
 chaudry_et_al_functions.plot_step_figures(
     path_out=path_out,
