@@ -87,7 +87,7 @@ def create_folder(path_folder, name_subfolder=None):
         if not os.path.exists(path_result_subolder):
             os.makedirs(path_result_subolder)
 
-def load_data(in_path, scenarios, simulation_name, unit, steps):
+def load_data(in_path, scenarios, simulation_name, unit, steps, modes):
     """Read results and set timestep as index in dataframe
 
     Returns
@@ -96,7 +96,6 @@ def load_data(in_path, scenarios, simulation_name, unit, steps):
     plot_decentarl_figures = True
     data_container = {}
     data_container_fig_steps = {}
-    modes = ['CENTRAL', 'DECENTRAL']
 
     for scenario in scenarios:
         data_container[scenario] = {}
@@ -231,9 +230,11 @@ def plot_maps(
         scenarios,
         years,
         weather_scearnio,
+        modes,
         temporal_conversion_factor,
         seperate_legend=True,
         create_cartopy_maps=True
+
     ):
     """Plot spatial maps
 
@@ -243,7 +244,6 @@ def plot_maps(
     import cartopy.io.shapereader as shpreader
 
     path_out_folder_fig6 = os.path.join(path_out, 'fig6')
-    modes = ['CENTRAL', 'DECENTRAL']
 
     # Read shapefiles
     shapefile_energyhub = shpreader.Reader(path_shapefile_energyhub)
@@ -603,10 +603,13 @@ def plot_figures(
         path_out,
         data_container,
         filenames,
+        filenames_fueltypes,
         scenarios,
         weather_scearnio,
         types_to_plot,
         unit,
+        x_values_lims,
+        modes,
         temporal_conversion_factor,
         years=[2015, 2030, 2050],
         seperate_legend=True
@@ -618,7 +621,6 @@ def plot_figures(
     fontsize_large = 10
     annote_crit = False #Add labels
 
-    modes = ['DECENTRAL', 'CENTRAL']
     left = 'CENTRAL'
     right = 'DECENTRAL'
 
@@ -652,10 +654,12 @@ def plot_figures(
         height_cm_xy_figure = 5 # Figure height of xy figure
 
         seasonal_week_day = 2
+
+        # Select hours from 627 hours from supply model outputs (index 1 to 627)
         hours_selected = range(24 * (seasonal_week_day) + 1, 24 * (seasonal_week_day + 1) + 1)
+        hours_selected = range(1, 25)
 
         # Select a full week
-        #height_cm_xy_figure = 10 # Figure height of xy figure
         #hours_selected = range(24 * (0) + 1, 24 * (6 + 1) + 1)
 
         fig_dict = {}
@@ -667,8 +671,6 @@ def plot_figures(
         path_out_folder_fig4 = os.path.join(path_out, 'fig4')
 
         for year in years:
-            print("... " + str(year))
-
             fig_dict[year] = {}
             fig_dict_piecharts[year] = {}
             fig_dict_fuelypes[year] = {}
@@ -682,9 +684,7 @@ def plot_figures(
 
                 for scenario in scenarios:
                     fig_dict[year][mode][scenario] = {}
-                    fig_dict_fuelypes[year][mode][scenario] = pd.DataFrame(
-                        [[0,0,0,0]],
-                        columns=fueltypes_coloring.keys())
+                    fig_dict_fuelypes[year][mode][scenario] = pd.DataFrame([[0,0,0,0]], columns=fueltypes_coloring.keys())
 
                     colors_xy_plot = []
                     data_files = data_container[scenario][mode][weather_scearnio]['energy_supply_constrained']
@@ -728,11 +728,14 @@ def plot_figures(
                             if (file_name_split_no_timpestep in filenames['elec_hubs'].keys()) or (
                                 file_name_split_no_timpestep in filenames['elec_transmission'].keys()):
                                 fig_dict_fuelypes[year][mode][scenario]['electricity'] += sum_file
+
                             elif (file_name_split_no_timpestep in filenames['gas_hubs'].keys()) or (
                                 file_name_split_no_timpestep in filenames['gas_transmission'].keys()):
                                 fig_dict_fuelypes[year][mode][scenario]['gas'] += sum_file
+
                             elif file_name_split_no_timpestep in filenames['heat_hubs'].keys():
                                 fig_dict_fuelypes[year][mode][scenario]['heat'] += sum_file
+
                             elif file_name_split_no_timpestep in filenames['hydrogen_hubs'].keys():
                                 fig_dict_fuelypes[year][mode][scenario]['hydrogen'] += sum_file
 
@@ -794,11 +797,6 @@ def plot_figures(
 
                 ax.grid(which='major', color='white', axis='y', linestyle='-')
 
-                # ------------
-                # Limits
-                # ------------
-                #plt.ylim(0, 2 )
-
                 # Legend
                 # ------------
                 handles, labels = plt.gca().get_legend_handles_labels()
@@ -824,11 +822,6 @@ def plot_figures(
                 # Ticks and labels
                 # ------------------
                 plt.tick_params(axis='y', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
-                '''interval = 0.5
-                nr_of_intervals = 6
-                max_tick = (nr_of_intervals * interval)
-                ticks = [round(i * interval, 2)  for i in range(nr_of_intervals)]
-                labels = [str(round(i * interval, 2)) for i in range(nr_of_intervals)]'''
     
                 #Axis label
                 ax.set_xlabel('Energy hub region')
@@ -877,16 +870,9 @@ def plot_figures(
                         table_out.append(row)
                     
                     fig, ax = plt.subplots()
-                    '''ax2 = df_bars.plot(
-                        kind='bar',
-                        x=[]],
-                        y=df_bars.columns.tolist(),
-                        color=list(colors_right_left.values()),
-                        width=0.4)'''
 
                     ax = df_bars.plot(
                         kind='bar',
-                        #x=df_bars.values,
                         y=df_bars.columns.tolist(),
                         color=list(colors_right_left.values()),
                         width=0.4)
@@ -914,7 +900,6 @@ def plot_figures(
 
                     # Add grid lines
                     # ------------
-                    #ax.grid(which='major', color='white', axis='y', linestyle='-', alpha=0.5)
                     plt.tick_params(axis='y', which='both', left=False) #remove ticks
                     
                     # ------------------
@@ -981,7 +966,6 @@ def plot_figures(
 
                 ax = dummy_df.plot(
                     kind='bar',
-                    #x=dummy_df.values,
                     y=dummy_df.columns,
                     color='black',
                     width=0.4)
@@ -1017,15 +1001,14 @@ def plot_figures(
                     numalign="right")
                 write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
 
-            # ----------------------
+            # ========================================================
             # Fueltype chart showing the split between fueltypes
-            # ----------------------
+            # ========================================================
             for scenario in scenarios:
                 table_out = []
                 for mode in [right, left]:
 
                     fig, ax = plt.subplots()
-
                     data_fueltypes = fig_dict_fuelypes[year][mode][scenario]
 
                     # Conver to percentages
@@ -1069,10 +1052,7 @@ def plot_figures(
                         frameon=False)
 
                     # Empty y ticks
-                    plt.yticks(
-                        ticks=[0],
-                        labels=[''],
-                        fontsize=fontsize_small)
+                    plt.yticks(ticks=[0], labels=[''], fontsize=fontsize_small)
 
                     # Remove ticks
                     plt.tick_params(axis='x', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
@@ -1119,9 +1099,9 @@ def plot_figures(
                         numalign="right")
                     write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
 
-            # ----------------------
+            # ========================================================
             # PLot pie-charts
-            # ----------------------
+            # ========================================================
             radius_terawatt = 80 # 100% (radius 1) corresponds to 15 Terawatt (used to configure size of pie-charts)
 
             for scenario in scenarios:
@@ -1152,17 +1132,12 @@ def plot_figures(
                     explode_factor = new_radius * 0.1
                     explode_distance = [explode_factor for i in range(len(data_pie_chart.index))]
 
-                    # ---------------------
+                    # ========================================================
                     # Plotting pie chart
-                    # ---------------------
+                    # ========================================================
                     fig, ax = plt.subplots(figsize=cm2inch(4.5, 5))
 
                     if not annote_crit:
-                        '''plt.pie(
-                            data_pie_chart.values,
-                            explode=explode_distance,
-                            radius=new_radius,
-                            wedgeprops=dict(width=new_radius * 0.4))'''
                         data_pie_chart.plot(
                             kind='pie',
                             labels=None,
@@ -1269,9 +1244,9 @@ def plot_figures(
                         numalign="right")
                     write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
 
-            # ----------
+            # ========================================================
             # Plot x-y graph
-            # ----------
+            # ========================================================
             for scenario in scenarios:
                 print("... plotting xy-graph: {}   {}".format(year, scenario))
                 table_out = []
@@ -1302,6 +1277,7 @@ def plot_figures(
                 table_out.append([])
 
                 fig, ax = plt.subplots(figsize=cm2inch(9, height_cm_xy_figure))
+
                 df_right.plot(
                     kind='barh',
                     ax=ax,
@@ -1325,8 +1301,9 @@ def plot_figures(
                 #plt.title(right, fontdict=None, loc='right', fontsize=fontsize_small)
 
                 # Customize x-axis
-                nr_of_bins = 4
-                bin_value = int(np.max(df_right.values) / nr_of_bins)
+                nr_of_bins = x_values_lims[fueltype]['nr_of_bins']
+                bin_value = x_values_lims[fueltype]['bin_value']
+
                 right_ticks = np.array([bin_value * i for i in range(nr_of_bins + 2)])
                 left_ticks = right_ticks * -1
                 left_ticks = left_ticks[::-1]
@@ -1372,12 +1349,8 @@ def plot_figures(
                 ax.spines['left'].set_visible(False)
 
                 # Limits
-                plt.autoscale(enable=True, axis='x', tight=True)
+                #plt.autoscale(enable=True, axis='x', tight=True)
                 plt.autoscale(enable=True, axis='y', tight=True)
-
-                # Add grid lines
-                ax.grid(which='major', color='black', axis='y', linestyle='--')
-                plt.tick_params(axis='y', which='both', left=False) #remove ticks
 
                 # Save pdf of figure and legend
                 fig_name = "{}_{}_{}__xy_plot.pdf".format(scenario, year, fueltype)
@@ -1388,6 +1361,10 @@ def plot_figures(
                         legend,
                         os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
                     legend.remove()
+
+                # Add grid lines
+                ax.grid(which='major', color='black', axis='y', linestyle='--')
+                plt.tick_params(axis='y', which='both', left=False) #remove ticks
 
                 # Labels
                 # ------------

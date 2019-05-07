@@ -53,6 +53,7 @@ shutil.rmtree(path_out)
 chaudry_et_al_functions.create_folder(path_out)
 
 figs = ['fig3', 'fig4', 'fig5', 'fig6']
+modes = ['DECENTRAL', 'CENTRAL']
 
 for fig_name in figs:
     path_fig = os.path.join(path_out, fig_name)
@@ -148,8 +149,21 @@ filenames = {
         'output_eh_h2_qs_timestep': 'olivedrab',
         'output_eh_h2storage_level_timestep': 'olivedrab',
     }
-
 }
+
+filenames_fueltypes = {
+    'electricity': [],
+    'gas': [],
+    'hydrogen': [],
+}
+
+# Provide x-value limites
+x_values_lims = {
+    'elec_hubs': {'nr_of_bins': 2, 'bin_value': 10},
+    'heat_hubs': {'nr_of_bins': 3, 'bin_value': 10},
+}
+
+
 steps = ['step1', 'step2', 'step3'] #, 'step4']
 years = [2015, 2030, 2050]
 
@@ -161,14 +175,15 @@ data_container, data_container_fig_steps = chaudry_et_al_functions.load_data(
     simulation_name=simulation_name,
     scenarios=scenarios,
     unit=unit,
-    steps=steps)
+    steps=steps,
+    modes=modes)
 
 print("... finished loading data", flush=True)
 
 # ------------------------
 # Create figures
 # ------------------------
-print("... start plotting Fig6", flush=True)
+'''print("... start plotting Fig6", flush=True)
 chaudry_et_al_functions.plot_maps(
     path_out,
     path_shapefile_energyhub,
@@ -178,6 +193,7 @@ chaudry_et_al_functions.plot_maps(
     years=years,
     scenarios=scenarios,
     weather_scearnio=weather_scenario,
+    modes=modes,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year,
     create_cartopy_maps=True)
 
@@ -197,16 +213,19 @@ try:
     print("... plotted Fig5", flush=True)
 except:
     print("could not create step figures")
-
+'''
 print("plotting Figs 3 and 4", flush=True)
 chaudry_et_al_functions.plot_figures(
     path_out,
     data_container,
     filenames=filenames,
+    filenames_fueltypes=filenames_fueltypes,
     scenarios=scenarios,
     weather_scearnio=weather_scenario,
     types_to_plot=['elec_hubs', 'heat_hubs'],
     unit=unit,
+    x_values_lims=x_values_lims,
+    modes=modes,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year)
 
 print("... Finished creasting figures", flush=True)
