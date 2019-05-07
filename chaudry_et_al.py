@@ -179,17 +179,19 @@ chaudry_et_al_functions.plot_maps(
     weather_scearnio=weather_scenario,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year,
     create_cartopy_maps=True)
-
-chaudry_et_al_functions.plot_step_figures(
-    path_out=path_out,
-    data_container_fig_steps=data_container_fig_steps,
-    metric_filenames=metric_filenames,
-    scenarios=scenarios,
-    weather_scearnio=weather_scenario,
-    steps=steps,
-    unit_metric=unit_metric,
-    temporal_conversion_factor=factor_from_4_weeks_to_full_year,
-    years=years)
+try:
+    chaudry_et_al_functions.plot_step_figures(
+        path_out=path_out,
+        data_container_fig_steps=data_container_fig_steps,
+        metric_filenames=metric_filenames,
+        scenarios=scenarios,
+        weather_scearnio=weather_scenario,
+        steps=steps,
+        unit_metric=unit_metric,
+        temporal_conversion_factor=factor_from_4_weeks_to_full_year,
+        years=years)
+except:
+    print("could not create 'step' figures)
 
 chaudry_et_al_functions.plot_figures(
     path_out,
