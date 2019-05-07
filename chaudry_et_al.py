@@ -183,6 +183,20 @@ print("... finished loading data", flush=True)
 # ------------------------
 # Create figures
 # ------------------------
+print("plotting Figs 3 and 4", flush=True)
+chaudry_et_al_functions.plot_figures(
+    path_out,
+    data_container,
+    filenames=filenames,
+    filenames_fueltypes=filenames_fueltypes,
+    scenarios=scenarios,
+    weather_scearnio=weather_scenario,
+    types_to_plot=['elec_hubs', 'heat_hubs'],
+    unit=unit,
+    x_values_lims=x_values_lims,
+    modes=modes,
+    temporal_conversion_factor=factor_from_4_weeks_to_full_year)
+
 print("... start plotting Fig6", flush=True)
 chaudry_et_al_functions.plot_maps(
     path_out,
@@ -198,7 +212,6 @@ chaudry_et_al_functions.plot_maps(
     create_cartopy_maps=True)
 
 print("... plotted Fig 6", flush=True)
-
 try:
     chaudry_et_al_functions.plot_step_figures(
         path_out=path_out,
@@ -214,18 +227,5 @@ try:
 except:
     print("could not create step figures")
 
-print("plotting Figs 3 and 4", flush=True)
-chaudry_et_al_functions.plot_figures(
-    path_out,
-    data_container,
-    filenames=filenames,
-    filenames_fueltypes=filenames_fueltypes,
-    scenarios=scenarios,
-    weather_scearnio=weather_scenario,
-    types_to_plot=['elec_hubs', 'heat_hubs'],
-    unit=unit,
-    x_values_lims=x_values_lims,
-    modes=modes,
-    temporal_conversion_factor=factor_from_4_weeks_to_full_year)
 
 print("... Finished creasting figures", flush=True)

@@ -1321,7 +1321,7 @@ def plot_figures(
                 bin_width = int(len(hours_selected) / nr_of_bins)
                 min_bin_value = int(np.min(hours_selected))
 
-                ticks = np.array([(bin_width * i) - 0.5 for i in range(nr_of_bins + 1)])
+                ticks = np.array([(bin_width * i) for i in range(nr_of_bins + 1)])
                 labels = np.array([str(min_bin_value + bin_width * i) for i in range(nr_of_bins + 1)])
 
                 plt.yticks(
@@ -1349,7 +1349,7 @@ def plot_figures(
 
                 # Limits
                 #plt.autoscale(enable=True, axis='x', tight=True)
-                plt.autoscale(enable=True, axis='y', tight=True)
+                #plt.autoscale(enable=True, axis='y', tight=True)
 
                 # Save pdf of figure and legend
                 fig_name = "{}_{}_{}__xy_plot.pdf".format(scenario, year, fueltype)
@@ -1362,7 +1362,7 @@ def plot_figures(
                     legend.remove()
 
                 # Add grid lines
-                ax.grid(which='major', color='black', axis='y', linestyle='--')
+                ax.grid(which='major', color='white', axis='y', linestyle='--')
                 plt.tick_params(axis='y', which='both', left=False) #remove ticks
 
                 # Labels
