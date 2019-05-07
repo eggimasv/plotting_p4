@@ -168,6 +168,7 @@ print("... finished loading data", flush=True)
 # ------------------------
 # Create figures
 # ------------------------
+print("... start plotting Fig6", flush=True)
 chaudry_et_al_functions.plot_maps(
     path_out,
     path_shapefile_energyhub,
@@ -179,6 +180,9 @@ chaudry_et_al_functions.plot_maps(
     weather_scearnio=weather_scenario,
     temporal_conversion_factor=factor_from_4_weeks_to_full_year,
     create_cartopy_maps=True)
+
+print("... plotted Fig 6", flush=True)
+
 try:
     chaudry_et_al_functions.plot_step_figures(
         path_out=path_out,
@@ -190,9 +194,11 @@ try:
         unit_metric=unit_metric,
         temporal_conversion_factor=factor_from_4_weeks_to_full_year,
         years=years)
+    print("... plotted Fig5", flush=True)
 except:
     print("could not create step figures")
 
+print("plotting Figs 3 and 4", flush=True)
 chaudry_et_al_functions.plot_figures(
     path_out,
     data_container,

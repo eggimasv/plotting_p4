@@ -294,7 +294,8 @@ def plot_maps(
                                     regional_annual = regional_annual.groupby(regional_annual.index).sum()
                                     region_type = 'bus_bars'
                                 except:
-                                    print("no 'bus_bars' or 'energy_hub' attribute")
+                                    #print("no 'bus_bars' or 'energy_hub' attribute: {}".format(file_name))
+                                    pass
                 
                             file_name_split_no_timpestep = file_name[:-9]    #remove ending
                             name_column = file_name_split_no_timpestep[7:-9] #remove output_ and ending
@@ -469,12 +470,12 @@ def plot_step_figures(
                                 regional_annual = file_data.set_index('energy_hub')
                                 regional_annual = regional_annual.groupby(regional_annual.index).sum()
                             except:
-                                print("no energy_hub attribute")
+                                #print("no energy_hub attribute")
                                 try:
                                     regional_annual = file_data.set_index('bus_bars')
                                     regional_annual = regional_annual.groupby(regional_annual.index).sum()
                                 except:
-                                    print("no 'bus_bars' or 'energy_hub' attribute")
+                                    #print("no 'bus_bars' or 'energy_hub' attribute")
                                     pass
                 
                             file_name_split_no_timpestep = file_name[:-9] #remove ending
@@ -1394,6 +1395,7 @@ def plot_figures(
                 #plt.ylabel("Time: {}".format(seasonal_week_day),  fontdict=font_additional_info)
                 plt.ylabel("Hour of peak day")
                 plt.savefig(path_out_file)
+                plt.close('all')
 
                 table_tabulate = tabulate(
                     table_out,
