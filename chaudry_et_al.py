@@ -191,7 +191,7 @@ try:
         temporal_conversion_factor=factor_from_4_weeks_to_full_year,
         years=years)
 except:
-    print("could not create 'step' figures)
+    print("could not create step figures")
 
 chaudry_et_al_functions.plot_figures(
     path_out,
