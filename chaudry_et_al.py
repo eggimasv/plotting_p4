@@ -81,13 +81,13 @@ filenames = {
     #Electricity Generation mix in energy hubs
     'elec_hubs': { 
         'output_eh_gas_fired_other_timestep': 'gray',
-        'output_eh_chp_gas_timestep': 'peru',
+        'output_eh_chp_gas_timestep': 'fuchsia',
         'output_eh_chp_biomass_timestep': 'green',
         'output_eh_chp_waste_timestep': 'violet',
         'output_eh_fuel_cell_timestep': 'slateblue',
         'output_eh_wind_curtalied_timestep': 'firebrick',
         'output_eh_wind_power_timestep': 'blue',
-        'output_eh_tran_e_timestep': 'darkcyan'
+        'output_eh_tran_e_timestep': 'orangered'
         }, 
 
     #Electricity Generation mix in electricity transmisison
@@ -108,7 +108,7 @@ filenames = {
     #Heat Supply Mix in energy hubs
     'heat_hubs':{ 
         'output_eh_gasboiler_b_timestep': 'darkcyan',
-        'output_eh_heatpump_b_timestep': 'plum',
+        'output_eh_heatpump_b_timestep': 'royalblue',
         'output_eh_gasboiler_dh_timestep': 'orange',
         'output_eh_gaschp_dh_timestep': 'y',
         'output_eh_heatpump_dh_timestep': 'indianred',
@@ -117,10 +117,10 @@ filenames = {
         'output_eh_biomasschp_dh_timestep': 'darkgreen',
         'output_eh_wastechp_dh_timestep': 'darkmagenta',
         'output_eh_electricboiler_b_timestep': 'aqua',
-        'output_eh_electricboiler_dh_timestep': 'greenyellow',
-        'output_eh_hydrogenboiler_b_timestep': 'yellow',
-        'output_eh_hydrogen_fuelcell_dh_timestep': 'olivedrab',
-        'output_eh_hydrogen_heatpump_b_timestep': 'gold'},
+        'output_eh_electricboiler_dh_timestep': 'grey',
+        'output_eh_hydrogenboiler_b_timestep': 'magenta',
+        'output_eh_hydrogen_fuelcell_dh_timestep': 'brown',
+        'output_eh_hydrogen_heatpump_b_timestep': 'olive'},
 
     #Natural gas supply mix in gas transmissios
     'gas_transmission': {
@@ -183,7 +183,7 @@ print("... finished loading data", flush=True)
 # ------------------------
 # Create figures
 # ------------------------
-'''print("... start plotting Fig6", flush=True)
+print("... start plotting Fig6", flush=True)
 chaudry_et_al_functions.plot_maps(
     path_out,
     path_shapefile_energyhub,
@@ -213,7 +213,7 @@ try:
     print("... plotted Fig5", flush=True)
 except:
     print("could not create step figures")
-'''
+
 print("plotting Figs 3 and 4", flush=True)
 chaudry_et_al_functions.plot_figures(
     path_out,

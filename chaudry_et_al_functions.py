@@ -439,8 +439,7 @@ def plot_step_figures(
 
     color_scenarios = {
         'MV': 'brown',
-        'EW': 'steelblue'
-    }
+        'EW': 'steelblue'}
 
     for year in years:
         fig_dict[year] = {}
@@ -647,6 +646,10 @@ def plot_figures(
         'heat': '#e9c0fd',
         'hydrogen': '#00242b'}
 
+    colors_right_left = {
+        right: 'orange',
+        left: 'royalblue'}
+
     for fueltype in types_to_plot:
         print(".... fueltype: {}".format(fueltype))
 
@@ -786,10 +789,6 @@ def plot_figures(
                     reg_val.insert(0, index)
                     table_all_regs.append(reg_val)
     
-                colors_right_left = {
-                    right: '#ddca7c',
-                    left: '#4a8487'}
-
                 ax = df_bars.plot(
                     kind='bar',
                     width=0.8,
