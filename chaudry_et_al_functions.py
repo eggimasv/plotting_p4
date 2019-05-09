@@ -282,47 +282,60 @@ def plot_maps(
                         data_files = data_container[scenario][mode][weather_scearnio]['energy_supply_constrained']
 
                         for file_name, file_data in data_files.items():
-
+                            print("...{}".format(file_name))
                             # Aggregate regional  
                             try: 
                                 regional_annual = file_data.set_index('energy_hub')
                                 regional_annual = regional_annual.groupby(regional_annual.index).sum()
                                 region_type = 'energy_hub'
                             except:
-                                try:
-                                    regional_annual = file_data.set_index('bus_bars')
-                                    regional_annual = regional_annual.groupby(regional_annual.index).sum()
-                                    region_type = 'bus_bars'
-                                except:
-                                    #print("no 'bus_bars' or 'energy_hub' attribute: {}".format(file_name))
-                                    pass
+                                pass
+                            try:
+                                regional_annual = file_data.set_index('bus_bars')
+                                regional_annual = regional_annual.groupby(regional_annual.index).sum()
+                                region_type = 'bus_bars'
+                            except:
+                                #print("no 'bus_bars' or 'energy_hub' attribute: {}".format(file_name))
+                                pass
                 
-                            file_name_split_no_timpestep = file_name[:-9]    #remove ending
-                            name_column = file_name_split_no_timpestep[7:-9] #remove output_ and ending
-                            file_name_split = file_name.split("_")
-                            year_simulation = int(file_name_split[-1][:4])
+                            try:
+                                regional_annual = file_data.set_index('gas_nodes')
+                                regional_annual = regional_annual.groupby(regional_annual.index).sum()
+                                region_type = 'gas_nodes' #TODO ?? REally?
+                            except:
+                                #print("no 'bus_bars' or 'energy_hub' attribute: {}".format(file_name))
+                                pass
 
-                            if year == year_simulation:
-                                if file_name_split_no_timpestep == metric_file_name:
-                                    region_type_metric = region_type
+                            if region_type == 'gas_nodes':
+                                # Skiop
+                                pass
+                            else:
+                                file_name_split_no_timpestep = file_name[:-9]    #remove ending
+                                name_column = file_name_split_no_timpestep[7:-9] #remove output_ and ending
+                                file_name_split = file_name.split("_")
+                                year_simulation = int(file_name_split[-1][:4])
 
-                                    if region_type == 'bus_bars':
-                                        df_to_plot_busbars[mode] = regional_annual[name_column].tolist()
-                                    if region_type == 'energy_hub':
-                                        df_to_plot_energyhubs[mode] = regional_annual[name_column].tolist()
+                                if year == year_simulation:
+                                    if file_name_split_no_timpestep == metric_file_name:
+                                        region_type_metric = region_type
 
-                                    # Write out all restuls (that could be plotted in ArcGIS)
-                                    if region_type == 'bus_bars':
-                                        values = df_to_plot_busbars[mode].to_frame()
-                                    if region_type == 'energy_hub':
-                                        values = df_to_plot_energyhubs[mode].to_frame()
-    
-                                    filename = "{}_{}_{}_{}_{}__map_values.txt".format(year, scenario, metric, mode, region_type)
-                                    values.to_csv(
-                                        os.path.join(path_out_folder_fig6, filename),
-                                        header=True,
-                                        index=True,
-                                        sep=',') #, mode='a')
+                                        if region_type == 'bus_bars':
+                                            df_to_plot_busbars[mode] = regional_annual[name_column].tolist()
+                                        if region_type == 'energy_hub':
+                                            df_to_plot_energyhubs[mode] = regional_annual[name_column].tolist()
+
+                                        # Write out all restuls (that could be plotted in ArcGIS)
+                                        if region_type == 'bus_bars':
+                                            values = df_to_plot_busbars[mode].to_frame()
+                                        if region_type == 'energy_hub':
+                                            values = df_to_plot_energyhubs[mode].to_frame()
+        
+                                        filename = "{}_{}_{}_{}_{}__map_values.txt".format(year, scenario, metric, mode, region_type)
+                                        values.to_csv(
+                                            os.path.join(path_out_folder_fig6, filename),
+                                            header=True,
+                                            index=True,
+                                            sep=',')
                 
                 if region_type_metric == 'bus_bars':
                     fig_dict[year][metric] = {'region_type': region_type_metric, 'data': df_to_plot_busbars}
@@ -470,13 +483,20 @@ def plot_step_figures(
                                 regional_annual = regional_annual.groupby(regional_annual.index).sum()
                             except:
                                 #print("no energy_hub attribute")
-                                try:
-                                    regional_annual = file_data.set_index('bus_bars')
-                                    regional_annual = regional_annual.groupby(regional_annual.index).sum()
-                                except:
-                                    #print("no 'bus_bars' or 'energy_hub' attribute")
-                                    pass
-                
+                                pass
+                            try:
+                                regional_annual = file_data.set_index('bus_bars')
+                                regional_annual = regional_annual.groupby(regional_annual.index).sum()
+                            except:
+                                #print("no 'bus_bars'")
+                                pass
+                            try:
+                                regional_annual = file_data.set_index('gas_nodes')
+                                regional_annual = regional_annual.groupby(regional_annual.index).sum()
+                            except:
+                                #print("no gas_nodes attribute")
+                                pass
+
                             file_name_split_no_timpestep = file_name[:-9] #remove ending
                             name_column = file_name_split_no_timpestep[7:-9] #remove output_ and ending
                             file_name_split = file_name.split("_")
@@ -484,9 +504,8 @@ def plot_step_figures(
 
                             if year == year_simulation:
                                 if file_name_split_no_timpestep == metric_file_name:
-                                    # Add National annual
                                     #df_to_plot[scenario][step] = national_per_timesteps[name_column]
-                                    df_to_plot[scenario][step] = np.sum(regional_annual[name_column])
+                                    df_to_plot[scenario][step] = np.sum(regional_annual[name_column]) # Add National annual
 
             fig_dict[year][metric] = df_to_plot
 
@@ -497,7 +516,8 @@ def plot_step_figures(
             for metric, scenario_data in metrics.items():
                 table_all_regs = []
 
-                data_scenario_steps = df_to_plot
+                #data_scenario_steps = df_to_plot
+                df_to_plot = scenario_data
 
                 fig, ax = plt.subplots()
 

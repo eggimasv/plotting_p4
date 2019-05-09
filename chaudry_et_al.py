@@ -64,13 +64,34 @@ metric_filenames = {
     'emissions_eh': {'output_e_emissions_eh_timestep':'gray'},
     'e_emissions': {'output_e_emissions_timestep': 'green'},
     'h_emissions': {'output_h_emissions_eh_timestep': 'yellow'},
+
+    'gas_load_shed': {'output_gas_load_shed_timestep': 'red'},
+    'elec_load_shed': {'output_elec_load_shed_timestep': 'blue'},
+    'gas_load_shed_eh': {'output_gas_load_shed_eh_timestep': 'brown'},
+    'elec_load_shed_eh': {'output_elec_load_shed_eh_timestep': 'cyan'},
+
+    'tran_wind_curtailed':	{'output_tran_wind_curtailed_timestep': 'pink'},
+    'tran_pv_curtailed': {'output_tran_pv_curtailed_timestep': 'orange'},
+    
+    'elec_cost': {'output_tran_pv_curtailed_timestep': 'magenta'},
     }
 
 # Units of metric
 unit_metric = {
-    'emissions_eh': 'unit??',
-    'e_emissions': 'unit??',
-    'h_emissions': 'unit??',
+    'emissions_eh': 'set_unit',
+    'e_emissions': 'set_unit',
+    'h_emissions': 'set_unit',
+    
+    'gas_load_shed': 'set_unit',
+    'elec_load_shed': 'set_unit',
+    'gas_load_shed_eh': 'set_unit',
+    'elec_load_shed_eh': 'set_unit',
+
+    'tran_wind_curtailed': 'set_unit',
+    'tran_pv_curtailed': 'set_unit',
+
+    'tran_pv_curtailed': 'set_unit',
+    'elec_cost': 'set_unit',
 }
 
 # For plotting maps
@@ -183,6 +204,7 @@ print("... finished loading data", flush=True)
 # ------------------------
 # Create figures
 # ------------------------
+
 print("plotting Figs 3 and 4", flush=True)
 chaudry_et_al_functions.plot_figures(
     path_out,
@@ -212,8 +234,9 @@ chaudry_et_al_functions.plot_maps(
     create_cartopy_maps=True)
 
 print("... plotted Fig 6", flush=True)
-try:
-    chaudry_et_al_functions.plot_step_figures(
+
+#try:
+chaudry_et_al_functions.plot_step_figures(
         path_out=path_out,
         data_container_fig_steps=data_container_fig_steps,
         metric_filenames=metric_filenames,
@@ -223,9 +246,9 @@ try:
         unit_metric=unit_metric,
         temporal_conversion_factor=factor_from_4_weeks_to_full_year,
         years=years)
-    print("... plotted Fig5", flush=True)
-except:
-    print("could not create step figures")
+print("... plotted Fig5", flush=True)
+#except:
+#    print("could not create step figures")
 
 
 print("... Finished creasting figures", flush=True)
