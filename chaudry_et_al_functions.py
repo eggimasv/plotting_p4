@@ -660,7 +660,7 @@ def plot_figures(
 
         # Select hours from 627 hours from supply model outputs (index 1 to 627)
         hours_selected = range(24 * (seasonal_week_day) + 1, 24 * (seasonal_week_day + 1) + 1)
-        hours_selected = range(1, 25)
+        hours_selected = range(35, 59)
 
         # Select a full week
         #hours_selected = range(24 * (0) + 1, 24 * (6 + 1) + 1)
@@ -1242,6 +1242,9 @@ def plot_figures(
                         table_out, headers=['mode', 'type', 'absolute', 'relative'],
                         numalign="right")
                     write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
+                   
+                    # Write total sum to txt file
+                    write_to_txt(path_out_file[:-4] + "total_sum.txt", str(total_sum))
 
             # ========================================================
             # Plot x-y graph
@@ -1362,7 +1365,7 @@ def plot_figures(
                     legend.remove()
 
                 # Add grid lines
-                ax.grid(which='major', color='white', axis='y', linestyle='--')
+                ax.grid(which='major', color='white', axis='x', linestyle='--')
                 plt.tick_params(axis='y', which='both', left=False) #remove ticks
 
                 # Labels
