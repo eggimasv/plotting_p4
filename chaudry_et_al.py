@@ -235,20 +235,20 @@ chaudry_et_al_functions.plot_maps(
 
 print("... plotted Fig 6", flush=True)
 
-#try:
-chaudry_et_al_functions.plot_step_figures(
-        path_out=path_out,
-        data_container_fig_steps=data_container_fig_steps,
-        metric_filenames=metric_filenames,
-        scenarios=scenarios,
-        weather_scearnio=weather_scenario,
-        steps=steps,
-        unit_metric=unit_metric,
-        temporal_conversion_factor=factor_from_4_weeks_to_full_year,
-        years=years)
-print("... plotted Fig5", flush=True)
-#except:
-#    print("could not create step figures")
+try:
+    chaudry_et_al_functions.plot_step_figures(
+            path_out=path_out,
+            data_container_fig_steps=data_container_fig_steps,
+            metric_filenames=metric_filenames,
+            scenarios=scenarios,
+            weather_scearnio=weather_scenario,
+            steps=steps,
+            unit_metric=unit_metric,
+            temporal_conversion_factor=factor_from_4_weeks_to_full_year,
+            years=years)
+    print("... plotted Fig5", flush=True)
+except:
+    print("could not create step figures")
 
 
 print("... Finished creasting figures", flush=True)

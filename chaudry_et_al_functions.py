@@ -20,6 +20,22 @@ rcParams['font.family'] = 'sans-serif'
 rcParams['font.sans-serif'] = ['Arial']
 #rcParams.update({'figure.autolayout': True})
 
+def clear_figure(plt, fig, ax):
+    """Clear figure contents and axis
+    """
+    try:
+        plt.close('all')
+    except:
+        pass
+    try:
+        fig.clear()
+    except:
+        pass
+    try:
+        ax.remove()
+    except:
+        pass
+
 def autolabel(rects, ax, rounding_digits, value_show_crit=0.01):
     """Place labels with percentages in middle of stacked plots
     """
@@ -860,7 +876,7 @@ def plot_figures(
                     legend.remove()
 
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
-                plt.close('all')
+                clear_figure(plt, fig, ax)
 
                 # Write out results to txt
                 table_all_regs_tabulate = tabulate(
@@ -956,9 +972,6 @@ def plot_figures(
                     fig = plt.gcf()
                     fig.set_size_inches(cm2inch(widht, height))
 
-                    #plt.autoscale(enable=True, axis='x', tight=True)
-                    #plt.autoscale(enable=True, axis='y', tight=True)
-
                     # Save pdf of figure and legend
                     # ------------
                     fig_name = "{}_{}_{}__{}__barplot.pdf".format(scenario, year, fueltype, region)
@@ -973,7 +986,7 @@ def plot_figures(
                     plt.tight_layout()
 
                     plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
-                    plt.close('all')
+                    clear_figure(plt, fig, ax)
 
                 # ----------------------------
                 # Plot legend element
@@ -1012,7 +1025,7 @@ def plot_figures(
                 path_out_file = os.path.join(path_out_folder_fig4, fig_name)
 
                 plt.savefig(path_out_file, transparent=True, bbox_inches='tight')
-                plt.close('all')
+                clear_figure(plt, fig, ax)
 
                 table_tabulate = tabulate(
                     table_out,
@@ -1110,7 +1123,7 @@ def plot_figures(
                     ax.spines['left'].set_visible(False)
 
                     plt.savefig(path_out_file)
-                    plt.close('all')
+                    clear_figure(plt, fig, ax)
 
                     table_tabulate = tabulate(
                         table_out,
@@ -1134,14 +1147,13 @@ def plot_figures(
 
                     #  Calculate new radius depending on demand (area proportional to size) (100%)
                     initial_radius = 1
-                    total_sum = data_pie_chart.sum() / 1000
+                    total_sum = data_pie_chart.sum() / 1000 #Terawatt
                     area_change_p = total_sum / radius_terawatt
 
                     # Convert that radius reflects the change in area (and not size)
                     new_radius = math.sqrt(area_change_p) * initial_radius
 
                     # write results to txt
-                    total_sum = data_pie_chart.sum()
                     for index in data_pie_chart.index:
                         absolute = data_pie_chart.loc[index]
                         relative = (absolute / total_sum)
@@ -1256,7 +1268,7 @@ def plot_figures(
                     ax.spines['left'].set_visible(False)
 
                     plt.savefig(path_out_file)
-                    plt.close('all')
+                    clear_figure(plt, fig, ax)
 
                     table_tabulate = tabulate(
                         table_out, headers=['mode', 'type', 'absolute', 'relative'],
@@ -1300,28 +1312,108 @@ def plot_figures(
 
                 fig, ax = plt.subplots(figsize=cm2inch(9, height_cm_xy_figure))
 
+                # --------------
+                # Sorting (make that tran_E is first entry)
+                # --------------
+                try:
+                    first_element_to_plot = 'eh_tran_e'
+                    _ = df_right[first_element_to_plot]
+                    orig_order = df_right.columns.values.tolist()
+                    orig_order.remove(first_element_to_plot)
+                    orig_order.insert(0, first_element_to_plot)
+
+                    # Reorder
+                    df_right = df_right[orig_order]
+                    df_left = df_left[orig_order]
+
+                    # Remove attribute '' from dataframe
+                    attribute_to_remove = 'eh_tran_e' #USE EXPORTS
+                    df_line_attribute_right = df_right[attribute_to_remove]
+                    df_line_attribute_left = df_left[attribute_to_remove]
+
+                except:
+                    pass #no first_element_to_plot in data
+                
+                
                 df_right.plot(
                     kind='barh',
-                    ax=ax,
+                    #ax=ax,
                     width=1.0,
                     stacked=True,
-                    color=colors_xy_plot)
+                    color=colors_xy_plot,
+                    zorder=1,
+                    sharex=True,
+                    sharey=True
+                    )
+
                 df_left.plot(
                     kind='barh',
-                    ax=ax,
+                    #ax=ax,
                     width=1.0,
                     legend=False,
                     stacked=True, 
-                    color=colors_xy_plot)
+                    color=colors_xy_plot,
+                    zorder=1,
+                    sharex=True,
+                    sharey=True
+                    )
+
+                print("y: " + str(df_left.index.tolist()), flush=True)
+                # Plot attribute '' as stepped line chart
+                y_values_new = df_left.index.tolist()
+                #try:
+
+                print("=========df=====", flush=True)
+                # Not horizontal
+                df_line_attribute_right.plot(
+                    x='eh_tran_e',
+                    kind='line',
+                    drawstyle="steps",
+                    #ax=ax,
+                    legend=False,
+                    color='red',
+                    zorder=2,
+                    sharex=True,
+                    sharey=True
+                    )
+                
+                x = df_line_attribute_right.values.tolist()  
+                y = df_line_attribute_right.index.values.tolist() 
+                #x = [-10, 10, 20, 30]
+                #y = [-10, 30, 40, 50]
+                print("===========")
+                print("x: " + str(x),flush=True)
+                print("y: " + str(y),flush=True)
+                plt.scatter(x,y)
+                ax.step(
+                    x=x,
+                    y=y,zorder=2,
+                    color='magenta',
+                    #sharex=True,
+                    #sharey=True
+                    )
+                plt.autoscale(enable=True, axis='y', tight=True)
+
+
+                # STEP not same axis somehow
+                ##ax.step(x=x,y=y,zorder=2, color='green')
+                '''
+                for i in [df_line_attribute_right, df_line_attribute_left]:
+
+                    x = [-10, 10, 20, 30]
+                    y = [-10, 30, 40, 50]
+                    #plt.step(x=x,y=y,zorder=2) #ax=ax,)
+
+                    ax.scatter(x,y)
+                '''
+                #except:
+                #    print("FAIIIIIIIIIILED", flush=True)
+                #    pass
 
                 # Add vertical line
-                ax.axvline(linewidth=1, color='black')
-                
-                # Title
-                # ------
-                #plt.title(left, fontdict=None, loc='left', fontsize=fontsize_small)
-                #plt.title(right, fontdict=None, loc='right', fontsize=fontsize_small)
+                ax.axvline(linewidth=1, color='black', zorder=3)
 
+                #'''
                 # Customize x-axis
                 nr_of_bins = x_values_lims[fueltype]['nr_of_bins']
                 bin_value = x_values_lims[fueltype]['bin_value']
@@ -1351,7 +1443,7 @@ def plot_figures(
                     ticks=ticks,
                     labels=labels,
                     fontsize=fontsize_small)
-
+                #'''
                 # Legend
                 handles, labels = plt.gca().get_legend_handles_labels()
                 by_label = OrderedDict(zip(labels, handles)) # remove duplicates
@@ -1370,10 +1462,6 @@ def plot_figures(
                 ax.spines['bottom'].set_visible(False)
                 ax.spines['left'].set_visible(False)
 
-                # Limits
-                #plt.autoscale(enable=True, axis='x', tight=True)
-                #plt.autoscale(enable=True, axis='y', tight=True)
-
                 # Save pdf of figure and legend
                 fig_name = "{}_{}_{}__xy_plot.pdf".format(scenario, year, fueltype)
                 path_out_file = os.path.join(path_out_folder_fig3, fig_name)
@@ -1386,7 +1474,9 @@ def plot_figures(
 
                 # Add grid lines
                 ax.grid(which='major', color='white', axis='x', linestyle='--')
+                plt.tick_params(axis='x', which='both', bottom=False) #remove ticks
                 plt.tick_params(axis='y', which='both', left=False) #remove ticks
+                plt.show()
 
                 # Labels
                 # ------------
@@ -1394,7 +1484,7 @@ def plot_figures(
                 #plt.ylabel("Time: {}".format(seasonal_week_day),  fontdict=font_additional_info)
                 plt.ylabel("Hour of peak day")
                 plt.savefig(path_out_file)
-                plt.close('all')
+                clear_figure(plt, fig, ax)
 
                 table_tabulate = tabulate(
                     table_out,
