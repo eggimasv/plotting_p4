@@ -1310,13 +1310,47 @@ def plot_figures(
                 #df_to_plot.plot.bar(stacked=True)#, orientation='vertical')
                 table_out.append([])
 
+
+                #***********************************************************
+                '''fig, ax = plt.subplots(figsize=cm2inch(9, height_cm_xy_figure))
+                #df_right.reset_index(inplace=True)
+                #df_right.plot(kind='barh',width=1,legend=False,stacked=True,ax=ax,color='red',zorder=2) #colors_xy_plot
+                #x = df_right['eh_tran_e'].values.tolist()  
+
+                df = pd.DataFrame(np.array([[1, 1], [2, 10], [3, 100], [4, 100]]), columns=['a', 'b'])
+                
+                
+                df.plot(kind='barh',width=1,legend=False,stacked=True,ax=ax,color='red',zorder=2)
+                
+                x = df['a'].values.tolist()
+                y = df.index.values.tolist()
+
+ 
+                print("a", flush=True)
+                print(x, flush=True)
+                print("--", flush=True)
+                print(y, flush=True)
+                
+                #plt.scatter(x,y)
+                ax.step(x=x, y=y, zorder=2, color='green')
+                plt.show()'''
+                #***********************************************************
+
                 fig, ax = plt.subplots(figsize=cm2inch(9, height_cm_xy_figure))
+
+                # Bin infos
+                nr_of_bins = x_values_lims[fueltype]['nr_of_bins']
+                bin_value = x_values_lims[fueltype]['bin_value']
 
                 # --------------
                 # Sorting (make that tran_E is first entry)
                 # --------------
+                first_element_to_plot = 'eh_tran_e'
+                attribute_to_plot = 'eh_tran_e' #Line plot argument
+                color_to_plot_attribute = 'magenta' #Color of line plot argument
+
                 try:
-                    first_element_to_plot = 'eh_tran_e'
+                    
                     _ = df_right[first_element_to_plot]
                     orig_order = df_right.columns.values.tolist()
                     orig_order.remove(first_element_to_plot)
@@ -1327,97 +1361,51 @@ def plot_figures(
                     df_left = df_left[orig_order]
 
                     # Remove attribute '' from dataframe
-                    attribute_to_remove = 'eh_tran_e' #USE EXPORTS
-                    df_line_attribute_right = df_right[attribute_to_remove]
-                    df_line_attribute_left = df_left[attribute_to_remove]
+                    df_line_attribute_right = df_right[first_element_to_plot]
+                    df_line_attribute_left = df_left[first_element_to_plot]
+
+                    # Plot attribute '' as stepped line chart right
+
+                    x_right = df_line_attribute_right.values.tolist()  
+                    
+                    y_right = [(bin_width * i) for i in range(nr_of_bins + 1)]
+                    y_right = [i - 0.5 for i in range(len(hours_selected))]
+
+                    x_left = df_line_attribute_left.values.tolist()  
+                    y_left = [i - 0.5 for i in range(len(hours_selected))]
+
+                    ax.step(x=x_right, y=y_right, zorder=4, linestyle='--', color=color_to_plot_attribute)
+                    ax.step(x=x_left, y=y_left, zorder=4, linestyle='--', color=color_to_plot_attribute)
+                    
+                    # Remove from dataframe
+                    ##df_right.drop([attribute_to_plot], axis=1)
+                    ##df_left.drop([attribute_to_plot], axis=1)
 
                 except:
                     pass #no first_element_to_plot in data
-                
-                
+
                 df_right.plot(
                     kind='barh',
-                    #ax=ax,
+                    ax=ax,
                     width=1.0,
+                    legend=True,
                     stacked=True,
                     color=colors_xy_plot,
-                    zorder=1,
-                    sharex=True,
-                    sharey=True
-                    )
+                    zorder=1)
 
                 df_left.plot(
                     kind='barh',
-                    #ax=ax,
+                    ax=ax,
                     width=1.0,
                     legend=False,
                     stacked=True, 
                     color=colors_xy_plot,
-                    zorder=1,
-                    sharex=True,
-                    sharey=True
-                    )
-
-                print("y: " + str(df_left.index.tolist()), flush=True)
-                # Plot attribute '' as stepped line chart
-                y_values_new = df_left.index.tolist()
-                #try:
-
-                print("=========df=====", flush=True)
-                # Not horizontal
-                df_line_attribute_right.plot(
-                    x='eh_tran_e',
-                    kind='line',
-                    drawstyle="steps",
-                    #ax=ax,
-                    legend=False,
-                    color='red',
-                    zorder=2,
-                    sharex=True,
-                    sharey=True
-                    )
-                
-                x = df_line_attribute_right.values.tolist()  
-                y = df_line_attribute_right.index.values.tolist() 
-                #x = [-10, 10, 20, 30]
-                #y = [-10, 30, 40, 50]
-                print("===========")
-                print("x: " + str(x),flush=True)
-                print("y: " + str(y),flush=True)
-                plt.scatter(x,y)
-                ax.step(
-                    x=x,
-                    y=y,zorder=2,
-                    color='magenta',
-                    #sharex=True,
-                    #sharey=True
-                    )
-                plt.autoscale(enable=True, axis='y', tight=True)
-
-
-                # STEP not same axis somehow
-                ##ax.step(x=x,y=y,zorder=2, color='green')
-                '''
-                for i in [df_line_attribute_right, df_line_attribute_left]:
-
-                    x = [-10, 10, 20, 30]
-                    y = [-10, 30, 40, 50]
-                    #plt.step(x=x,y=y,zorder=2) #ax=ax,)
-
-                    ax.scatter(x,y)
-                '''
-                #except:
-                #    print("FAIIIIIIIIIILED", flush=True)
-                #    pass
+                    zorder=1)
 
                 # Add vertical line
                 ax.axvline(linewidth=1, color='black', zorder=3)
 
-                #'''
                 # Customize x-axis
-                nr_of_bins = x_values_lims[fueltype]['nr_of_bins']
-                bin_value = x_values_lims[fueltype]['bin_value']
-
                 right_ticks = np.array([bin_value * i for i in range(nr_of_bins + 2)])
                 left_ticks = right_ticks * -1
                 left_ticks = left_ticks[::-1]
@@ -1476,7 +1464,6 @@ def plot_figures(
                 ax.grid(which='major', color='white', axis='x', linestyle='--')
                 plt.tick_params(axis='x', which='both', bottom=False) #remove ticks
                 plt.tick_params(axis='y', which='both', left=False) #remove ticks
-                plt.show()
 
                 # Labels
                 # ------------

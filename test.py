@@ -1,33 +1,40 @@
+import os
+import math
+from collections import OrderedDict
+import pandas as pd
 import numpy as np
+from collections import defaultdict
+from tabulate import tabulate
+import argparse
 
-'''
-class ConvertHourlyToSeasonalWeek(SectorModel):
-    """Parameterised interval sampling
-    """
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+from matplotlib import colorbar, colors
+from matplotlib.colors import Normalize
 
-    def before_model_run(self, data_handle):
-        """Set up coefficients/read from cache?
-        """
+fig, ax = plt.subplots()
 
-    def simulate(self, data_handle):
-        """Convert timesteps, using parameterised approach
-        """        
-        conversion_mode = data_handle.get_parameter('conversion_mode')
-        for from_spec in self.inputs.values():
-            if from_spec.name in self.outputs:
-                to_spec = self.outputs[from_spec.name]
-                data_in = data_handle.get_data(from_spec.name)
-                data_out = self.convert(data_in, to_spec, conversion_mode)
-                data_handle.set_results(to_spec.name, data_out)
+df = pd.DataFrame(np.array([[1, 1], [2, 10], [3, 100], [4, 100]]), columns=['a', 'b'])
 
-    def convert(self, data, to_spec, conversion_mode):
-        """Do conversion
-        """
-        ...'''
-reg_nrs = 3
-empty_input_data = np.array(reg_nrs, 8760) + 1
+x = df['a'].values.tolist()
+y = df.index.values.tolist()
 
-def convert_seasonal_week_actual_days():
+df.plot(
+    kind='barh',
+    width=1,
+    legend=False,
+    ax=ax,
+    color='red',
+    zorder=2)
+    #sharex=True,
+    #sharey=True)
 
-    
+plt.scatter(x,y)
+ax.step(
+    x=x,
+    y=y,
+    zorder=2,
+    color='magenta')
 
+plt.show()
