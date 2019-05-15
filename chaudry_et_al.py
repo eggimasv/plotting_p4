@@ -74,6 +74,8 @@ metric_filenames = {
     'tran_pv_curtailed': {'output_tran_pv_curtailed_timestep': 'orange'},
     
     'elec_cost': {'output_tran_pv_curtailed_timestep': 'magenta'},
+
+    'opt_cost': {'output_total_opt_cost_timestep': 'green'},
     }
 
 # Units of metric
@@ -90,8 +92,9 @@ unit_metric = {
     'tran_wind_curtailed': 'set_unit',
     'tran_pv_curtailed': 'set_unit',
 
-    'tran_pv_curtailed': 'set_unit',
     'elec_cost': 'set_unit',
+
+    'total_opt_cost': 'set_unit',
 }
 
 # For plotting maps
@@ -169,9 +172,18 @@ filenames = {
         'output_eh_h2_timestep': 'olivedrab',
         'output_eh_h2_qs_timestep': 'olivedrab',
         'output_eh_h2storage_level_timestep': 'olivedrab',
+    },
+    #Output oil
+    'oil_output': {
+        'output_oil_demand_heat_timestep': 'olivedrab',
+        'output_oil_demand_timestep': 'olivedrab'
+    },
+    #Output oil
+    'solidfuel_output': {
+        'output_solidfuel_demand_heat_timestep': 'olivedrab',
+        'output_solidfuel_demand_timestep': 'olivedrab'
     }
 }
-
 filenames_fueltypes = {
     'electricity': [],
     'gas': [],
@@ -207,6 +219,7 @@ print("... finished loading data", flush=True)
 
 print("plotting Figs 3 and 4", flush=True)
 chaudry_et_al_functions.plot_figures(
+    path_in,
     path_out,
     data_container,
     filenames=filenames,
@@ -217,7 +230,8 @@ chaudry_et_al_functions.plot_figures(
     unit=unit,
     x_values_lims=x_values_lims,
     modes=modes,
-    temporal_conversion_factor=factor_from_4_weeks_to_full_year)
+    temporal_conversion_factor=factor_from_4_weeks_to_full_year,
+    years=years)
 
 print("... start plotting Fig6", flush=True)
 chaudry_et_al_functions.plot_maps(

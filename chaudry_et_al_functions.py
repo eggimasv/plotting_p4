@@ -41,7 +41,7 @@ def autolabel(rects, ax, rounding_digits, value_show_crit=0.01):
     """
     for rect in rects:
         value = rect.get_width()
-        value_round = round(value, rounding_digits) * 100
+        value_round = round(value, rounding_digits)
 
         if value_round > value_show_crit:
             ax.text(rect.get_x() + rect.get_width() / 2,#width
@@ -50,7 +50,7 @@ def autolabel(rects, ax, rounding_digits, value_show_crit=0.01):
                     ha='center',
                     va='center',
                     color="White",
-                    fontsize=8,
+                    fontsize=6,
                     fontweight="bold")
 
 def cm2inch(*tupl):
@@ -292,6 +292,7 @@ def plot_maps(
 
                 for mode in modes:
                     for metric_file_name, color_metric in filenames.items():
+                        print("metric_file_name: " + str(metric_file_name), flush=True)
                         df_to_plot_energyhubs[mode] = 0
                         df_to_plot_busbars[mode] = 0
 
@@ -635,6 +636,7 @@ def plot_step_figures(
     return
 
 def plot_figures(
+        path_in,
         path_out,
         data_container,
         filenames,
@@ -666,21 +668,15 @@ def plot_figures(
         'size': fontsize_large}
 
     # https://www.ofgem.gov.uk/data-portal/electricity-generation-mix-quarter-and-fuel-source-gb
-    #Colors from ofgem
-    # gas: '#6699CC'
-    # nuclear:
-    # coal: FF9966
-    # oil: 339966
-    # hydro: 666699
-    # wind: CCCCCC
-    # Bioenergy: 333333
-    # interconnectors: 33CCCC
-    # pumped storage: FFCC33
+    #Colors partly from ofgem
     fueltypes_coloring = {
-        'electricity': '#03674f',
+        'biomass': '#333333',
+        'electricity': '#FFCC33',
         'gas': '#6699CC',
-        'heat': '#e9c0fd',
-        'hydrogen': '#00242b'}
+        'hydrogen': '#CC6666',
+        'oil': '#339966',
+        'solidfuel': '#FF9966',
+        'waste': '#33CCCC'}
 
     colors_right_left = {
         right: 'orange',
@@ -703,28 +699,115 @@ def plot_figures(
 
         fig_dict = {}
         fig_dict_piecharts = {}
-        fig_dict_fuelypes = {}
         fig_dict_regional_annual_demand = {}
 
         path_out_folder_fig3 = os.path.join(path_out, 'fig3')
         path_out_folder_fig4 = os.path.join(path_out, 'fig4')
 
+        # ========================================================
+        # Fueltype chart showing the split between fueltypes
+        # ========================================================
+        for scenario in scenarios:
+            table_out = []
+            for mode in [right, left]:
+
+                #data_fueltypes = fig_dict_fuelypes[year][mode][scenario]
+                filename_all = "{}_{}_demand_all_byfuel.csv".format(scenario, mode)
+                filename_heating = "{}_{}_demand_heating_byfuel.csv".format(scenario, mode)
+                path_filename_all = os.path.join(path_in, filename_all)
+                path_heating = os.path.join(path_in, filename_heating)
+                
+                df_all = pd.read_csv(path_filename_all)
+                df_heating = pd.read_csv(path_heating)
+
+                for data_type in [df_all, df_heating]:
+                    for year in years:
+                        fig, ax = plt.subplots()
+                        
+                        data_fueltypes_p = data_type[data_type['year'] == year]
+
+                        data_fueltypes_p = data_fueltypes_p.round(1)
+                        data_fueltypes_p = data_fueltypes_p.set_index('parameter')
+                        data_fueltypes_p = data_fueltypes_p.drop(columns=['year'])
+
+                        data_fueltypes_p = data_fueltypes_p.T #transpose
+                        ax = data_fueltypes_p.plot(
+                            kind='barh',
+                            stacked=True,
+                            width=0.7,
+                            color=fueltypes_coloring.values())
+
+                        # Position labels
+                        autolabel(ax.patches, ax, rounding_digits=3)
+
+                        # ------------
+                        handles, labels = plt.gca().get_legend_handles_labels()
+
+                        by_label = OrderedDict(zip(labels, handles)) # remove duplicates
+                        legend = plt.legend(
+                            by_label.values(),
+                            by_label.keys(),
+                            ncol=2,
+                            prop={'size': 10},
+                            loc='upper center',
+                            bbox_to_anchor=(0.5, -0.1),
+                            frameon=False)
+
+                        # Empty y ticks
+                        plt.yticks(ticks=[0], labels=[''], fontsize=fontsize_small)
+
+                        # Remove ticks
+                        plt.tick_params(axis='x', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
+                        plt.tick_params(axis='y', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
+
+                        #Axis label
+                        ax.set_xlabel('')
+                        ax.set_ylabel('')
+
+                        # Save pdf of figure and legend
+                        # ------------
+                        fig_name = "{}_{}_{}_{}__fueltypes_p.pdf".format(scenario, year, fueltype, mode)
+                        path_out_file = os.path.join(path_out_folder_fig3, fig_name)
+
+                        if seperate_legend:
+                            export_legend(
+                                legend,
+                                os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
+                            legend.remove()
+
+                        # Limits
+                        # ------------
+                        plt.autoscale(enable=True, axis='x', tight=True)
+                        plt.autoscale(enable=True, axis='y', tight=True)
+                        plt.tight_layout()
+
+                        # Reset figure size
+                        fig = plt.gcf()
+                        fig.set_size_inches(cm2inch(4.0, 0.3))
+
+                        # Remove frame
+                        # ------------
+                        ax.spines['top'].set_visible(False)
+                        ax.spines['right'].set_visible(False)
+                        ax.spines['bottom'].set_visible(False)
+                        ax.spines['left'].set_visible(False)
+
+                        plt.savefig(path_out_file)
+                        clear_figure(plt, fig, ax)
+
+        # Collect data
         for year in years:
             fig_dict[year] = {}
             fig_dict_piecharts[year] = {}
-            fig_dict_fuelypes[year] = {}
             fig_dict_regional_annual_demand[year] = {}
 
             for mode in modes:
                 fig_dict[year][mode] = {}
                 fig_dict_piecharts[year][mode] = {}
-                fig_dict_fuelypes[year][mode] = {}
                 fig_dict_regional_annual_demand[year][mode] = {}
 
                 for scenario in scenarios:
                     fig_dict[year][mode][scenario] = {}
-                    fig_dict_fuelypes[year][mode][scenario] = pd.DataFrame([[0,0,0,0]], columns=fueltypes_coloring.keys())
-
                     colors_xy_plot = []
                     data_files = data_container[scenario][mode][weather_scearnio]['energy_supply_constrained']
 
@@ -760,28 +843,10 @@ def plot_figures(
 
                                 color = filenames[fueltype][file_name_split_no_timpestep]
                                 colors_xy_plot.append(color)
-                            
-                            # Get fueltype specific files
-                            sum_file = national_per_timesteps[name_column].sum()
-
-                            if (file_name_split_no_timpestep in filenames['elec_hubs'].keys()) or (
-                                file_name_split_no_timpestep in filenames['elec_transmission'].keys()):
-                                fig_dict_fuelypes[year][mode][scenario]['electricity'] += sum_file
-
-                            elif (file_name_split_no_timpestep in filenames['gas_hubs'].keys()) or (
-                                file_name_split_no_timpestep in filenames['gas_transmission'].keys()):
-                                fig_dict_fuelypes[year][mode][scenario]['gas'] += sum_file
-
-                            elif file_name_split_no_timpestep in filenames['heat_hubs'].keys():
-                                fig_dict_fuelypes[year][mode][scenario]['heat'] += sum_file
-
-                            elif file_name_split_no_timpestep in filenames['hydrogen_hubs'].keys():
-                                fig_dict_fuelypes[year][mode][scenario]['hydrogen'] += sum_file
 
                     # Aggregate annual demand for pie-charts
                     fig_dict_piecharts[year][mode][scenario] = df_to_plot.sum()
                     fig_dict_regional_annual_demand[year][mode][scenario] = df_to_plot_regional.sum(axis=1)
-
                     fig_dict[year][mode][scenario] = df_to_plot.loc[hours_selected]
 
             # ------------------------------------
@@ -1032,104 +1097,6 @@ def plot_figures(
                     headers=headers,
                     numalign="right")
                 write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
-
-            # ========================================================
-            # Fueltype chart showing the split between fueltypes
-            # ========================================================
-            for scenario in scenarios:
-                table_out = []
-                for mode in [right, left]:
-
-                    fig, ax = plt.subplots()
-                    data_fueltypes = fig_dict_fuelypes[year][mode][scenario]
-
-                    # Conver to percentages
-                    data_fueltypes_p = data_fueltypes / data_fueltypes.sum().sum()
-                    data_fueltypes_p = data_fueltypes_p.round(2)
-
-                    absolute_values = list(data_fueltypes.values[0].tolist())
-                    relative_values = data_fueltypes_p.values[0].tolist()
-
-                    absolute_values.insert(0, 'absolute')
-                    relative_values.insert(0, 'relative')
-                    absolute_values.insert(0, mode)
-                    relative_values.insert(0, mode)
-                    table_out.append(absolute_values)
-                    table_out.append(relative_values)
-
-                    headers = list(data_fueltypes_p.columns)
-                    headers.insert(0, 'type')
-                    headers.insert(0, 'mode')
-
-                    ax = data_fueltypes_p.plot(
-                        kind='barh',
-                        stacked=True,
-                        width=0.7,
-                        color=fueltypes_coloring.values())
-
-                    # Position labels
-                    autolabel(ax.patches, ax, rounding_digits=3)
-
-                    # ------------
-                    handles, labels = plt.gca().get_legend_handles_labels()
-
-                    by_label = OrderedDict(zip(labels, handles)) # remove duplicates
-                    legend = plt.legend(
-                        by_label.values(),
-                        by_label.keys(),
-                        ncol=2,
-                        prop={'size': 10},
-                        loc='upper center',
-                        bbox_to_anchor=(0.5, -0.1),
-                        frameon=False)
-
-                    # Empty y ticks
-                    plt.yticks(ticks=[0], labels=[''], fontsize=fontsize_small)
-
-                    # Remove ticks
-                    plt.tick_params(axis='x', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
-                    plt.tick_params(axis='y', which='both', left=False, right=False, bottom=False, top=False, labelbottom=False)
-
-                    #Axis label
-                    ax.set_xlabel('')
-                    ax.set_ylabel('')
-
-                    # Save pdf of figure and legend
-                    # ------------
-                    fig_name = "{}_{}_{}_{}__fueltypes_p.pdf".format(scenario, year, fueltype, mode)
-                    path_out_file = os.path.join(path_out_folder_fig3, fig_name)
-
-                    if seperate_legend:
-                        export_legend(
-                            legend,
-                            os.path.join("{}__legend.pdf".format(path_out_file[:-4])))
-                        legend.remove()
-
-                    # Limits
-                    # ------------
-                    plt.autoscale(enable=True, axis='x', tight=True)
-                    plt.autoscale(enable=True, axis='y', tight=True)
-                    plt.tight_layout()
-
-                    # Reset figure size
-                    fig = plt.gcf()
-                    fig.set_size_inches(cm2inch(4.0, 0.3))
-
-                    # Remove frame
-                    # ------------
-                    ax.spines['top'].set_visible(False)
-                    ax.spines['right'].set_visible(False)
-                    ax.spines['bottom'].set_visible(False)
-                    ax.spines['left'].set_visible(False)
-
-                    plt.savefig(path_out_file)
-                    clear_figure(plt, fig, ax)
-
-                    table_tabulate = tabulate(
-                        table_out,
-                        headers=headers,
-                        numalign="right")
-                    write_to_txt(path_out_file[:-4] + ".txt", table_tabulate)
 
             # ========================================================
             # PLot pie-charts
