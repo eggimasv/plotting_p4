@@ -755,7 +755,7 @@ def plot_figures(
                             color=fueltypes_coloring.values())
 
                         # Position labels
-                        autolabel(ax.patches, ax, rounding_digits=3)
+                        autolabel(ax.patches, ax, rounding_digits=10)
 
                         # ------------
                         handles, labels = plt.gca().get_legend_handles_labels()
@@ -1303,7 +1303,7 @@ def plot_figures(
                 # --------------
                 # Sorting (make that tran_E is first entry)
                 # --------------
-                first_element_to_plot = 'eh_tran_e_export'
+                '''first_element_to_plot = 'eh_tran_e_export'
                 attribute_to_plot = 'eh_tran_e_export' #Line plot argument
                 color_to_plot_attribute = 'magenta' #Color of line plot argument
 
@@ -1342,7 +1342,7 @@ def plot_figures(
                 except:
                     print("____dd_____")
                     pass #no first_element_to_plot in data
-
+                '''
                 df_right.plot(
                     kind='barh',
                     ax=ax,
