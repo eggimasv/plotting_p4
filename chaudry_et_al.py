@@ -111,7 +111,8 @@ filenames = {
         'output_eh_fuel_cell_timestep': 'slateblue',
         'output_eh_wind_curtalied_timestep': 'firebrick',
         'output_eh_wind_power_timestep': 'blue',
-        'output_eh_tran_e_timestep': 'orangered'
+        'output_eh_tran_e_timestep': 'orangered',
+        'output_eh_tran_e_export_timestep': 'red'
         }, 
 
     #Electricity Generation mix in electricity transmisison

@@ -286,20 +286,23 @@ def plot_maps(
                 # Create busbars and regions empty dataframes
                 df_to_plot_energyhubs = pd.DataFrame(regions_energyhub, columns=['regions'])
                 df_to_plot_energyhubs = df_to_plot_energyhubs.set_index('regions')
+                df_to_plot_national = pd.DataFrame(columns=['national'])
 
                 df_to_plot_busbars = pd.DataFrame(regions_busbars, columns=['regions'])
                 df_to_plot_busbars = df_to_plot_busbars.set_index('regions')
 
                 for mode in modes:
+                    #print("======{}  {} {}".format(year, scenario, mode))
                     for metric_file_name, color_metric in filenames.items():
-                        print("metric_file_name: " + str(metric_file_name), flush=True)
+                        #print("metric_file_name: " + str(metric_file_name), flush=True)
                         df_to_plot_energyhubs[mode] = 0
                         df_to_plot_busbars[mode] = 0
+                        df_to_plot_national[mode] = 0
 
                         data_files = data_container[scenario][mode][weather_scearnio]['energy_supply_constrained']
 
                         for file_name, file_data in data_files.items():
-                            print("...{}".format(file_name))
+
                             # Aggregate regional  
                             try: 
                                 regional_annual = file_data.set_index('energy_hub')
@@ -307,24 +310,30 @@ def plot_maps(
                                 region_type = 'energy_hub'
                             except:
                                 pass
+
                             try:
                                 regional_annual = file_data.set_index('bus_bars')
                                 regional_annual = regional_annual.groupby(regional_annual.index).sum()
                                 region_type = 'bus_bars'
                             except:
-                                #print("no 'bus_bars' or 'energy_hub' attribute: {}".format(file_name))
                                 pass
                 
                             try:
                                 regional_annual = file_data.set_index('gas_nodes')
                                 regional_annual = regional_annual.groupby(regional_annual.index).sum()
-                                region_type = 'gas_nodes' #TODO ?? REally?
+                                region_type = 'gas_nodes'
                             except:
-                                #print("no 'bus_bars' or 'energy_hub' attribute: {}".format(file_name))
+                                pass
+
+                            try:
+                                regional_annual = file_data.set_index('national')
+                                regional_annual = regional_annual.groupby(regional_annual.index).sum()
+                                region_type = 'national'
+                            except:
                                 pass
 
                             if region_type == 'gas_nodes':
-                                # Skiop
+                                # Skip
                                 pass
                             else:
                                 file_name_split_no_timpestep = file_name[:-9]    #remove ending
@@ -340,24 +349,28 @@ def plot_maps(
                                             df_to_plot_busbars[mode] = regional_annual[name_column].tolist()
                                         if region_type == 'energy_hub':
                                             df_to_plot_energyhubs[mode] = regional_annual[name_column].tolist()
+                                        if region_type == 'national':
+                                            df_to_plot_national[mode] = regional_annual.sum()
 
-                                        # Write out all restuls (that could be plotted in ArcGIS)
+                                        # Write out all results (that could be plotted in ArcGIS)
                                         if region_type == 'bus_bars':
                                             values = df_to_plot_busbars[mode].to_frame()
                                         if region_type == 'energy_hub':
                                             values = df_to_plot_energyhubs[mode].to_frame()
-        
+                                        if region_type == 'national':
+                                            values = regional_annual
+
                                         filename = "{}_{}_{}_{}_{}__map_values.txt".format(year, scenario, metric, mode, region_type)
                                         values.to_csv(
                                             os.path.join(path_out_folder_fig6, filename),
-                                            header=True,
-                                            index=True,
-                                            sep=',')
+                                            header=True, index=True, sep=',')
                 
                 if region_type_metric == 'bus_bars':
                     fig_dict[year][metric] = {'region_type': region_type_metric, 'data': df_to_plot_busbars}
                 if region_type_metric == 'energy_hub':
                     fig_dict[year][metric] = {'region_type': region_type_metric, 'data': df_to_plot_energyhubs}
+                if region_type_metric == 'national':
+                    fig_dict[year][metric] = {'region_type': region_type_metric, 'data': []}
 
     if create_cartopy_maps:
         # Actual plotting with cartopy
@@ -377,77 +390,81 @@ def plot_maps(
                 for mode in modes:
                     
                     region_type = fig_dict[year][metric]['region_type']
-                    values = fig_dict[year][metric]['data'][mode]
-
-                    # Choropleth map colors, colorbar colors
-                    min_value = min(values)
-                    max_value = max(values)
-                    norm = Normalize(vmin=min_value, vmax=max_value)
-                    cmap = plt.cm.get_cmap(cmap_name)
-
-                    # Use Cartopy to plot geometries with reclassified faceolor
-                    plt.figure(figsize=cm2inch(4, 6), dpi=300)
-                    proj = ccrs.OSGB()
-                    ax = plt.axes(projection=proj)
-                    ax.outline_patch.set_visible(False)
-
-                    # set up a dict to hold geometries keyed by our key
-                    geoms_by_key = defaultdict(list)
-                    
-                    # for each records, pick out our key's value from the record
-                    # and store the geometry in the relevant list under geoms_by_key
-                    if region_type == 'bus_bars':
-                        for record in shapefile_bus_bars.records():
-                            region_name = record.attributes['Bus_No']
-                            geoms_by_key[region_name].append(record.geometry)
-                    if region_type == 'energy_hub':
-                        for record in shapefile_energyhub.records():
-                            region_name = record.attributes['Region_Num']
-                            geoms_by_key[region_name].append(record.geometry)
-
-                    # now we have all the geometries in lists for each value of our key
-                    # add them to the axis, using the relevant color as facecolor
-                    for region_name, geoms in geoms_by_key.items():
-                        value_region = values[region_name]
-
-                        # Manual classification (see fig_3_plot_over_time)
-                        #region_reclassified_value = reclassified.loc[key]['reclassified']
-                        #facecolor = color_manuals[region_reclassified_value]
-
-                        # Choropleth
-                        facecolor = cmap(norm(value_region))
-                        ax.add_geometries(geoms, crs=proj, edgecolor='black', facecolor=facecolor, linewidth=0.1)
-
-                    filname = "{}_{}_{}_{}__map".format(year, scenario, metric, mode)
-
-                    # Colorbar
-                    if seperate_legend: 
+                    #print("=====fff {}  {}  {} {} ".format(year, metric, mode, region_type))
+                    if region_type == 'national':
                         pass
                     else:
-                        # Add legend to figure
-                        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-                        sm._A = []
-                        plt.colorbar(sm, ax=ax)
+                        values = fig_dict[year][metric]['data'][mode]
 
-                    # Save figure
-                    plt.tight_layout()
-                    plt.savefig(os.path.join(path_out_folder_fig6, "{}.pdf".format(filname)))
-                    plt.close()
+                        # Choropleth map colors, colorbar colors
+                        min_value = min(values)
+                        max_value = max(values)
+                        norm = Normalize(vmin=min_value, vmax=max_value)
+                        cmap = plt.cm.get_cmap(cmap_name)
 
-                    # Save colorbar
-                    if seperate_legend:
-                        # draw a new figure and replot the colorbar there
-                        fig_cb, ax_cb = plt.subplots(figsize=cm2inch(1, 3))
-                        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-                        sm._A = []
-                        plt.colorbar(sm, ax=ax_cb)
-                        plt.axis('off')
+                        # Use Cartopy to plot geometries with reclassified faceolor
+                        plt.figure(figsize=cm2inch(4, 6), dpi=300)
+                        proj = ccrs.OSGB()
+                        ax = plt.axes(projection=proj)
+                        ax.outline_patch.set_visible(False)
 
-                        plt.savefig(
-                            os.path.join(path_out_folder_fig6, "{}__legend.pdf".format(filname)),
-                            bbox_inches='tight')
+                        # set up a dict to hold geometries keyed by our key
+                        geoms_by_key = defaultdict(list)
                         
+                        # for each records, pick out our key's value from the record
+                        # and store the geometry in the relevant list under geoms_by_key
+                        if region_type == 'bus_bars':
+                            for record in shapefile_bus_bars.records():
+                                region_name = record.attributes['Bus_No']
+                                geoms_by_key[region_name].append(record.geometry)
+                        if region_type == 'energy_hub':
+                            for record in shapefile_energyhub.records():
+                                region_name = record.attributes['Region_Num']
+                                geoms_by_key[region_name].append(record.geometry)
+
+                        # now we have all the geometries in lists for each value of our key
+                        # add them to the axis, using the relevant color as facecolor
+                        for region_name, geoms in geoms_by_key.items():
+                            value_region = values[region_name]
+
+                            # Manual classification (see fig_3_plot_over_time)
+                            #region_reclassified_value = reclassified.loc[key]['reclassified']
+                            #facecolor = color_manuals[region_reclassified_value]
+
+                            # Choropleth
+                            facecolor = cmap(norm(value_region))
+                            ax.add_geometries(geoms, crs=proj, edgecolor='black', facecolor=facecolor, linewidth=0.1)
+
+                        filname = "{}_{}_{}_{}__map".format(year, scenario, metric, mode)
+
+                        # Colorbar
+                        if seperate_legend: 
+                            pass
+                        else:
+                            # Add legend to figure
+                            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+                            sm._A = []
+                            plt.colorbar(sm, ax=ax)
+
+                        # Save figure
+                        plt.tight_layout()
+                        plt.savefig(os.path.join(path_out_folder_fig6, "{}.pdf".format(filname)))
                         plt.close()
+
+                        # Save colorbar
+                        if seperate_legend:
+                            # draw a new figure and replot the colorbar there
+                            fig_cb, ax_cb = plt.subplots(figsize=cm2inch(1, 3))
+                            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+                            sm._A = []
+                            plt.colorbar(sm, ax=ax_cb)
+                            plt.axis('off')
+
+                            plt.savefig(
+                                os.path.join(path_out_folder_fig6, "{}__legend.pdf".format(filname)),
+                                bbox_inches='tight')
+                            
+                            plt.close()
 
 def plot_step_figures(
         path_out,
@@ -1277,32 +1294,6 @@ def plot_figures(
                 #df_to_plot.plot.bar(stacked=True)#, orientation='vertical')
                 table_out.append([])
 
-
-                #***********************************************************
-                '''fig, ax = plt.subplots(figsize=cm2inch(9, height_cm_xy_figure))
-                #df_right.reset_index(inplace=True)
-                #df_right.plot(kind='barh',width=1,legend=False,stacked=True,ax=ax,color='red',zorder=2) #colors_xy_plot
-                #x = df_right['eh_tran_e'].values.tolist()  
-
-                df = pd.DataFrame(np.array([[1, 1], [2, 10], [3, 100], [4, 100]]), columns=['a', 'b'])
-                
-                
-                df.plot(kind='barh',width=1,legend=False,stacked=True,ax=ax,color='red',zorder=2)
-                
-                x = df['a'].values.tolist()
-                y = df.index.values.tolist()
-
- 
-                print("a", flush=True)
-                print(x, flush=True)
-                print("--", flush=True)
-                print(y, flush=True)
-                
-                #plt.scatter(x,y)
-                ax.step(x=x, y=y, zorder=2, color='green')
-                plt.show()'''
-                #***********************************************************
-
                 fig, ax = plt.subplots(figsize=cm2inch(9, height_cm_xy_figure))
 
                 # Bin infos
@@ -1312,8 +1303,8 @@ def plot_figures(
                 # --------------
                 # Sorting (make that tran_E is first entry)
                 # --------------
-                first_element_to_plot = 'eh_tran_e'
-                attribute_to_plot = 'eh_tran_e' #Line plot argument
+                first_element_to_plot = 'eh_tran_e_export'
+                attribute_to_plot = 'eh_tran_e_export' #Line plot argument
                 color_to_plot_attribute = 'magenta' #Color of line plot argument
 
                 try:
@@ -1345,10 +1336,11 @@ def plot_figures(
                     ax.step(x=x_left, y=y_left, zorder=4, linestyle='--', color=color_to_plot_attribute)
                     
                     # Remove from dataframe
-                    ##df_right.drop([attribute_to_plot], axis=1)
-                    ##df_left.drop([attribute_to_plot], axis=1)
-
+                    df_right.drop([attribute_to_plot], axis=1)
+                    df_left.drop([attribute_to_plot], axis=1)
+                    #plt.show()
                 except:
+                    print("____dd_____")
                     pass #no first_element_to_plot in data
 
                 df_right.plot(
@@ -1398,7 +1390,7 @@ def plot_figures(
                     ticks=ticks,
                     labels=labels,
                     fontsize=fontsize_small)
-                #'''
+
                 # Legend
                 handles, labels = plt.gca().get_legend_handles_labels()
                 by_label = OrderedDict(zip(labels, handles)) # remove duplicates
