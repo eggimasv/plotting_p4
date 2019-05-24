@@ -1303,7 +1303,8 @@ def plot_figures(
                 # --------------
                 # Sorting (make that tran_E is first entry)
                 # --------------
-                '''first_element_to_plot = 'eh_tran_e_export'
+                '''
+                first_element_to_plot = 'eh_tran_e_export'
                 attribute_to_plot = 'eh_tran_e_export' #Line plot argument
                 color_to_plot_attribute = 'magenta' #Color of line plot argument
 
@@ -1313,6 +1314,9 @@ def plot_figures(
                     orig_order = df_right.columns.values.tolist()
                     orig_order.remove(first_element_to_plot)
                     orig_order.insert(0, first_element_to_plot)
+                    
+                    colors_xy_plot.remove(first_element_to_plot)
+                    colors_xy_plot.insert(0, first_element_to_plot)
 
                     # Reorder
                     df_right = df_right[orig_order]
@@ -1338,7 +1342,7 @@ def plot_figures(
                     # Remove from dataframe
                     df_right.drop([attribute_to_plot], axis=1)
                     df_left.drop([attribute_to_plot], axis=1)
-                    #plt.show()
+                    plt.show()
                 except:
                     print("____dd_____")
                     pass #no first_element_to_plot in data
